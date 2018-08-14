@@ -92,7 +92,7 @@ public:
 
 private:
   void InitalizeNewProducedEnumerable(SourceIterator &iter) {
-    if (iter == std::cend(*enumerable_->source_))
+    if (iter == std::cend(enumerable_->source_))
       return ;
 
     produced_enumerable_ = std::make_shared<ProducedEnumerableHolder>(enumerable_->fn_(*iter));
@@ -104,8 +104,8 @@ private:
 
   bool is_past_the_end_iterator_;
 
-  SourceIterator first_ = std::cbegin(*enumerable_->source_);
-  SourceIterator last_ = std::cend(*enumerable_->source_);
+  SourceIterator first_ = std::cbegin(enumerable_->source_);
+  SourceIterator last_ = std::cend(enumerable_->source_);
 
   std::shared_ptr<ProducedEnumerableHolder> produced_enumerable_;
   ProducedIterator produced_first_;
@@ -123,7 +123,7 @@ public:
 
   OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
     : enumerable_(enumerable),
-      iterator_(is_past_the_end_iteratorator ? std::cend(*enumerable_->source_) : std::cbegin(*enumerable_->source_)) {}
+      iterator_(is_past_the_end_iteratorator ? std::cend(enumerable_->source_) : std::cbegin(enumerable_->source_)) {}
 
   OperatorSpecializedIterator(const OperatorSpecializedIterator &) = default;
   OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
@@ -225,8 +225,8 @@ private:
 
   bool is_past_the_end_iteratorator_;
 
-  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(*enumerable_->source_) : std::cbegin(*enumerable_->source_);
-  SourceIterator last_ = std::cend(*enumerable_->source_);
+  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->source_) : std::cbegin(enumerable_->source_);
+  SourceIterator last_ = std::cend(enumerable_->source_);
 
   SourceIterator2 first2_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->source2_) : std::cbegin(enumerable_->source2_);
   SourceIterator2 last2_ = std::cend(enumerable_->source2_);
@@ -287,8 +287,8 @@ private:
 
   const bool is_past_the_end_iteratorator_;
 
-  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(*enumerable_->source_) : std::cbegin(*enumerable_->source_);
-  SourceIterator last_ = std::cend(*enumerable_->source_);
+  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->source_) : std::cbegin(enumerable_->source_);
+  SourceIterator last_ = std::cend(enumerable_->source_);
 };
 
 } // namespace cinq_v3

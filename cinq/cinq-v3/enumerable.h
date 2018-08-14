@@ -11,26 +11,22 @@ namespace cinq_v3 {
 template <class TSource, class TFn, EnumerableCategory Category, OperatorType Operator, class... TRestSources>
 class Enumerable;
 
-template <EnumerableCategory Category, OperatorType Operator, class TSource, class TFn, class... Rest>
-auto CreateEnumerable(TSource &&source, TFn &&fn, Rest&&... rest) {
-  static_assert(cinq::utility::is_reference_wrapper_v<TSource>);
-
-  return Enumerable<cinq::utility::remove_reference_wrapper_t<std::decay_t<TSource>>, std::decay_t<TFn>, Category, Operator, std::decay_t<Rest>...>(
-      source.get(), std::move(fn), std::forward<Rest>(rest)...);
-}
-
 template <class TSource, class TFn, OperatorType Operator>
 class Enumerable<TSource, TFn, EnumerableCategory::Producer, Operator> {
 protected:
   static_assert(!cinq::utility::is_reference_wrapper_v<TSource>);
+  static_assert(!std::is_rvalue_reference_v<TSource>);
+
   friend class OperatorSpecializedIterator<Enumerable>;
 
 public:
   using SourceIterator = typename std::decay_t<TSource>::ResultIterator;
 
   template <class Source, class Fn>
-  Enumerable(const Source &source, Fn &&fn)
-    : source_(std::addressof(source)), fn_(std::forward<Fn>(fn)) {}
+  Enumerable(Source &&source, Fn &&fn)
+    : source_(std::move(source)), fn_(std::forward<Fn>(fn)) {
+    static_assert(std::is_rvalue_reference_v<Source &&>);
+  }
 
   class Iterator : public OperatorSpecializedIterator<Enumerable> {
   public:
@@ -63,12 +59,12 @@ public:
     return Iterator(this, true); // past end iterator
   }
 
-  void SetSource(const std::decay_t<TSource> *source) {
-    source_ = source;
+protected:
+  TSource &GetSource() {
+    return source_;
   }
 
-protected:
-  const std::decay_t<TSource> *source_;
+  TSource source_;
   TFn fn_;
 };
 
@@ -76,15 +72,20 @@ template <class TSource, class TFn, class TSource2>
 class Enumerable<TSource, TFn, EnumerableCategory::Producer, OperatorType::Join, TSource2> {
 protected:
   static_assert(!cinq::utility::is_reference_wrapper_v<TSource>);
+  static_assert(!std::is_rvalue_reference_v<TSource>);
+
   friend class OperatorSpecializedIterator<Enumerable>;
 
 public:
   using SourceIterator = typename std::decay_t<TSource>::ResultIterator;
   using SourceIterator2 = typename std::decay_t<TSource2>::ResultIterator;
 
-  template <class Source, class Fn, class Source2>
-  Enumerable(const Source &source, Fn &&, Source2 &&source2)
-    : source_(std::addressof(source)), source2_(std::forward<Source2>(source2)) {}
+  template <class Source, class Source2>
+  Enumerable(Source &&source, Source2 &&source2, TFn &&fn)
+    : source_(std::move(source)), source2_(std::move(source2)), result_selector_(std::move(fn)) {
+    static_assert(std::is_rvalue_reference_v<Source &&>);
+    static_assert(std::is_rvalue_reference_v<Source2 &&>);
+  }
 
   class Iterator : public OperatorSpecializedIterator<Enumerable> {
   public:
@@ -117,28 +118,28 @@ public:
     return Iterator(this, true); // past end iterator
   }
 
-  void SetSource(const std::decay_t<TSource> *source) {
-    source_ = source;
-  }
-
 protected:
-  const std::decay_t<TSource> *source_;
+  TSource source_;
   TSource2 source2_;
+  TFn result_selector_;
 };
-
 
 template <class TSource, class TFn, OperatorType Operator>
 class Enumerable<TSource, TFn, EnumerableCategory::Subrange, Operator> {
 private:
   static_assert(!cinq::utility::is_reference_wrapper_v<TSource>);
+  static_assert(!std::is_rvalue_reference_v<TSource>);
+
   friend class OperatorSpecializedIterator<Enumerable>;
 
 public:
   using SourceIterator = typename std::decay_t<TSource>::ResultIterator;
 
   template <class Source, class Fn>
-  Enumerable(const Source &source, Fn &&fn)
-    : source_(std::addressof(source)), fn_(std::forward<Fn>(fn)) {}
+  Enumerable(Source &&source, Fn &&fn)
+    : source_(std::move(source)), fn_(std::forward<Fn>(fn)) {
+    static_assert(std::is_rvalue_reference_v<Source &&>);
+  }
 
   Enumerable(const Enumerable &) = delete;
   Enumerable(Enumerable &&) = default;
@@ -182,7 +183,7 @@ public:
   }
 
 private:
-  const std::decay_t<TSource> *source_;
+  TSource source_;
   TFn fn_;
 };
 
