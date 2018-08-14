@@ -1,19 +1,14 @@
-Cinq(C++ integrated query, or five in france) is a header only, modern C++ library. This library has no third-party dependency.
+Cinq(C++ inefficient query) is a header only, modern C++ library. This library has no third-party dependency.
 
-It's planned to provide identical API and functionality in both C++11 and C++17.
+This project planned to provide identical API and functionality in lastest successive two C++ standards(currently C++17 and C++14).
 
-It contains multiple mostly interchangebale versions. The internal implementation is different across different versions, but the API and functionality is mostly identical.
+It will consist of multiple mostly interchangebale versions. The internal implementation will be largly different across different versions, but the API and functionality will be mostly identical.
 
-V1 doesn't support lazy evaluation, but with the best error message and the most intuitive internal implementation.
-Only a little template is used in V1, thus stepping through it is more pleasant than the others. And the error message is also more friendly.
--V1 does not support lazy evaluation, thus the result of every query is evaluted instantly.
+V1 doesn't support lazy evaluation, but with the best error message when something goes wrong and the most intuitive internal implementation.
+Only a little template is used in V1, thus stepping through it is more pleasant than the other versions.
 
-V2 is, can't say more performant, more sophicated. It use type erasure to support lazy evaluation, thus it comes with the overhead of virtual function call. It also use more template internally compare to V1, stepping through it during debugging will thus requires more efforts.
+V2 will use type erasure to support lazy evaluation, thus it comes with the overhead of virtual function call. It will also use more templates internally comparing to V1. Stepping through cinq-v2 during debugging will thus requires more efforts.
 
-V3 is the most performant version and is armed heavily with templates. It supports lazy evalution and multipass. But as .Net, multipass will cause re-evaluation.
+V3 is basically V2 but without using type erasure. It is armed heavily with templates. It will support lazy evalution and multipass.
 
-V4 is V3 with caching to reduce the overhead of multipass. But re-evaluation is not totally eliminated.
-
-V5 is basically V1 + V3. The result will be stored as evaluated.
-
-The first release will only contains V1 and V3, and supports only C++17.
+The first release will be only V3 and likely V1, and will require C++17 to compile.

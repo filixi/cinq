@@ -164,8 +164,11 @@ void TestCinqJoin() {
   std::vector<int> vtr{1, 3, 5};
   std::vector<int> vtr2{2, 4, 6};
 
-  auto query = Cinq(vtr).Join(vtr2, [](auto x) { return x; }, [](auto y) { return y; }, [](auto z) { return z; }).ToVector();
-  assert(query.size() == 9);
+  auto query = Cinq(vtr).Join(vtr2, [](auto x) { return x; }, [](auto y) { return y; }, [](auto z) { return z; });
+  std::vector<std::tuple<int, int>> result;
+  for (auto v : query)
+    result.push_back(v);
+  assert(result.size() == 9);
 }
 
 void TestCinqWhere() {

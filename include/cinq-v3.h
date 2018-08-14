@@ -15,106 +15,70 @@
 
 namespace cinq_v3 {
 namespace detail {
-template <class... TEnumerables>
+template <class TEnumerable>
 class Cinq {
 public:
-  using ResultIterator = typename std::tuple_element_t<sizeof...(TEnumerables) - 1, std::tuple<TEnumerables...>>::ResultIterator;
-
-  template <class T>
-  Cinq(T &&enumerables) : enumerables_(std::forward<T>(enumerables)) {
-    ResetAllSource<sizeof...(TEnumerables) - 1>();
-  }
+  using ResultIterator = typename TEnumerable::ResultIterator;
 
   template <class T, size_t... indexs>
   Cinq(T &container, std::index_sequence<indexs...>)
-    : enumerables_(std::tuple_element_t<0, std::tuple<TEnumerables...>>{container[indexs]...}) {
-    ResetAllSource<sizeof...(TEnumerables) - 1>();
-  }
+    : root_(TEnumerable{container[indexs]...}) {}
+
+  template <class... Args>
+  Cinq(Args&&... args) : root_(std::forward<Args>(args)...) {}
 
   Cinq(const Cinq &) = delete;
-  Cinq(Cinq &&c) : enumerables_(std::move(c.enumerables_)) {
-    ResetAllSource<sizeof...(TEnumerables) - 1>();
-  }
+  Cinq(Cinq &&) = default;
 
   Cinq &operator=(const Cinq &) = delete;
   Cinq &operator=(Cinq &&) = delete;
 
   auto begin() const {
-    return std::cbegin(LastEnumerable());
+    return std::cbegin(root_);
   }
 
   auto end() const {
-    return std::cend(LastEnumerable());
+    return std::cend(root_);
   }
 
   template <class Fn>
   auto Select(Fn fn) && {
-    return Append(
-      CreateEnumerable<EnumerableCategory::Producer, OperatorType::Select>(
-        std::ref(LastEnumerable()), std::move(fn)), fn);
+    using SelectType = Enumerable<TEnumerable, Fn, EnumerableCategory::Producer, OperatorType::Select>;
+    return Cinq<SelectType>(std::move(root_), std::move(fn));
   }
 
   template <class Fn>
   auto SelectMany(Fn fn) && {
-    return Append(
-      CreateEnumerable<EnumerableCategory::Producer, OperatorType::SelectMany>(
-        std::ref(LastEnumerable()), std::move(fn)), fn);
+    using SelectManyType = Enumerable<TEnumerable, Fn, EnumerableCategory::Producer, OperatorType::SelectMany>;
+    return Cinq<SelectManyType>(std::move(root_), std::move(fn));
   }
 
   template <class Fn>
   auto Where(Fn fn) && {
-    return Append(
-      CreateEnumerable<EnumerableCategory::Subrange, OperatorType::Where>(
-        std::ref(LastEnumerable()), std::move(fn)), fn);
+    using WhereType = Enumerable<TEnumerable, Fn, EnumerableCategory::Subrange, OperatorType::Where>;
+    return Cinq<WhereType>(std::move(root_), std::move(fn));
   }
 
   template <class Inner, class OuterKeySelector, class InnerKeySelector, class ResultSelector>
-  auto Join(Inner &&inner, OuterKeySelector outer_key_selector, InnerKeySelector &&inner_key_selector, ResultSelector &&result_selector) && {
-    return std::move(*this).Select(outer_key_selector).Join<void>(
-      std::forward<Inner>(inner),
-      std::forward<InnerKeySelector>(inner_key_selector),
-      std::forward<ResultSelector>(result_selector));
-  }
+  auto Join(Inner &&inner, OuterKeySelector outer_key_selector, InnerKeySelector &&inner_key_selector, ResultSelector result_selector) && {
+    using OuterSelectType = Enumerable<TEnumerable, OuterKeySelector, EnumerableCategory::Producer, OperatorType::Select>;
+    auto inner_select = cinq_v3::Cinq(inner).Select(std::forward<InnerKeySelector>(inner_key_selector));
 
-  template <class, class Inner, class InnerKeySelector, class ResultSelector>
-  auto Join(Inner &&inner, InnerKeySelector inner_key_selector, ResultSelector result_selector) && {
-    auto fn = [](auto &&) {};
-    return Append(
-      CreateEnumerable<EnumerableCategory::Producer, OperatorType::Join>(
-        std::ref(LastEnumerable()), 
-        0, cinq_v3::Cinq(std::forward<Inner>(inner)).Select(std::move(inner_key_selector))),
-        fn);
+    using JoinType = Enumerable<OuterSelectType, ResultSelector, EnumerableCategory::Producer, OperatorType::Join, decltype(inner_select)>;
+    return Cinq<JoinType>(
+        OuterSelectType(std::move(root_), outer_key_selector),
+        std::move(inner_select),
+        std::move(result_selector)
+      );
   }
-
+ 
   auto ToVector() && {
     using value_type = std::decay_t<typename std::decay_t<decltype(std::cbegin(*this))>::value_type>;
     return std::vector<value_type>(std::cbegin(*this), std::cend(*this));
   }
 
 private:
-  template <size_t current_index>
-  void ResetAllSource() {
-    if constexpr (current_index >= 1) {
-      std::get<current_index>(enumerables_).SetSource(
-          std::addressof(std::get<current_index-1>(enumerables_))
-        );
-      ResetAllSource<current_index-1>();
-    }
-  }
-
-  template <class TEnumerable, class Fn>
-  Cinq<TEnumerables..., TEnumerable> Append(TEnumerable &&enumerable, Fn &fn) {
-    using CallableCheck = decltype(fn(*std::cbegin(LastEnumerable())));
-
-    return Cinq<TEnumerables..., TEnumerable>(
-      std::tuple_cat(std::move(enumerables_), std::make_tuple(std::move(enumerable))));
-  }
-
-  decltype(auto) LastEnumerable() const {
-    return std::get<sizeof...(TEnumerables) - 1>(enumerables_);
-  }
-
-  std::tuple<TEnumerables...> enumerables_;
+  TEnumerable root_;
 };
 
 } // namespace detail
