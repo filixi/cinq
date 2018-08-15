@@ -13,7 +13,6 @@
 
 #include "cinq-v3.h"
 using cinq_v3::Cinq;
-using namespace cinq::utility;
 
 class MiniContainer {
 public:
@@ -57,6 +56,8 @@ void TestCinqInitialization() {
 }
 
 void TestCinqValueCategory() {
+  using namespace cinq::utility;
+
   std::vector<int> vtr{1,2,3,4,5};
   int arr[] = {1,2,3,4,5};
   auto shared_vtr = std::make_shared<std::vector<int>>();
@@ -164,10 +165,7 @@ void TestCinqJoin() {
   std::vector<int> vtr{1, 3, 5};
   std::vector<int> vtr2{2, 4, 6};
 
-  auto query = Cinq(vtr).Join(vtr2, [](auto x) { return x; }, [](auto y) { return y; }, [](auto z) { return z; });
-  std::vector<std::tuple<int, int>> result;
-  for (auto v : query)
-    result.push_back(v);
+  auto result = Cinq(vtr).Join(vtr2, [](auto x) { return x; }, [](auto y) { return y; }, [](auto z) { return z; }).ToVector();
   assert(result.size() == 9);
 }
 

@@ -5,7 +5,7 @@
 
 #include "../utility.h"
 
-namespace cinq_v3 {
+namespace cinq_v3::detail {
 
 template <class TSource>
 struct EnumerableSource;
@@ -15,8 +15,9 @@ struct is_enumerable_source : std::false_type {};
 template <class T>
 struct is_enumerable_source<EnumerableSource<T>> : std::true_type {};
 template <class T>
-constexpr bool is_enumerable_source_v = is_enumerable_source<T>::value;
+inline constexpr bool is_enumerable_source_v = is_enumerable_source<T>::value;
 
+// TSource can be reference
 template <class TSource>
 struct EnumerableSource {
 public:
@@ -45,4 +46,4 @@ private:
   TSource source_;
 };
 
-} // namespace cinq_v3
+} // namespace cinq_v3::detail

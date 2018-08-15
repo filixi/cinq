@@ -43,32 +43,32 @@ public:
 
   template <class Fn>
   auto Select(Fn fn) && {
-    using SelectType = Enumerable<TEnumerable, Fn, EnumerableCategory::Producer, OperatorType::Select>;
-    return Cinq<SelectType>(std::move(root_), std::move(fn));
+    using SelectType = Enumerable<EnumerableCategory::Producer, OperatorType::Select, Fn, TEnumerable>;
+    return Cinq<SelectType>(std::move(fn), std::move(root_));
   }
 
   template <class Fn>
   auto SelectMany(Fn fn) && {
-    using SelectManyType = Enumerable<TEnumerable, Fn, EnumerableCategory::Producer, OperatorType::SelectMany>;
-    return Cinq<SelectManyType>(std::move(root_), std::move(fn));
+    using SelectManyType = Enumerable<EnumerableCategory::Producer, OperatorType::SelectMany, Fn, TEnumerable>;
+    return Cinq<SelectManyType>(std::move(fn), std::move(root_));
   }
 
   template <class Fn>
   auto Where(Fn fn) && {
-    using WhereType = Enumerable<TEnumerable, Fn, EnumerableCategory::Subrange, OperatorType::Where>;
-    return Cinq<WhereType>(std::move(root_), std::move(fn));
+    using WhereType = Enumerable<EnumerableCategory::Subrange, OperatorType::Where, Fn, TEnumerable>;
+    return Cinq<WhereType>(std::move(fn), std::move(root_));
   }
 
   template <class Inner, class OuterKeySelector, class InnerKeySelector, class ResultSelector>
-  auto Join(Inner &&inner, OuterKeySelector outer_key_selector, InnerKeySelector &&inner_key_selector, ResultSelector result_selector) && {
-    using OuterSelectType = Enumerable<TEnumerable, OuterKeySelector, EnumerableCategory::Producer, OperatorType::Select>;
-    auto inner_select = cinq_v3::Cinq(inner).Select(std::forward<InnerKeySelector>(inner_key_selector));
+  auto Join(Inner &&inner, OuterKeySelector outer_key_selector, InnerKeySelector inner_key_selector, ResultSelector result_selector) && {
+    using OuterSelectType = Enumerable<EnumerableCategory::Producer, OperatorType::Select, OuterKeySelector, TEnumerable>;
+    auto inner_select = cinq_v3::Cinq(inner).Select(std::move(inner_key_selector));
 
-    using JoinType = Enumerable<OuterSelectType, ResultSelector, EnumerableCategory::Producer, OperatorType::Join, decltype(inner_select)>;
+    using JoinType = Enumerable<EnumerableCategory::Producer, OperatorType::Join, ResultSelector, OuterSelectType, decltype(inner_select)>;
     return Cinq<JoinType>(
-        OuterSelectType(std::move(root_), outer_key_selector),
-        std::move(inner_select),
-        std::move(result_selector)
+        std::move(result_selector),
+        OuterSelectType(std::move(outer_key_selector), std::move(root_)),
+        std::move(inner_select)
       );
   }
  
@@ -83,44 +83,41 @@ private:
 
 } // namespace detail
 
-
-// User provided container:
-// non reference_wrapper:
-//  if array type: convert to std::array
-//  else copy/move initialize
+// Following function/function template overload set is the front barrier to maintain inner type consistency from user provided types.
+// Such consistency will greatly reduce both compile-time and run-time errors by simplifing the inner type design.
+// All user provided container type must be wrapped by class template EnumerableSource.
+// All user provided container type which bypass this barrier must be wrapped by Cinq (when calling join, etc.).
+// Apart from EnumerableSource, every enumerable type which requires sources holds the owner-ship of the sources (of which the life-time is bound with the owner)
+//   and no reference type or reference wrapper is allowed.
 //
-// reference_wrapper:
-//  if array type: reference to array
-//  else reference to the container.
-
-template <class T>
-struct is_cinq : std::false_type {};
-template <class... TE>
-struct is_cinq<detail::Cinq<TE...>> : std::true_type {};
-template <class T>
-constexpr bool is_cinq_v = is_cinq<T>::value;
-
+// The return type of following overload set is always a specialization of class template Cinq,
+//   where the template argument will be a type of user-provieded container type after adjustment as described in following:
+// Given a Cinq call Cinq(expr),
+// if expr is of type array or reference to array, it is adjusted to std::array and then get wrapped into EnumerableSource, otherwise
+// if expr is of type reference_wrapper<T>, it is adjusted to T & and then get wrapped into EnumerableSource, i.e. EnumerableSource holds the same reference holds by expr, otherwise
+// if expr is of type Cinq<T>, then expr will be returned with perfect forwarding, otherwise
+// when expr is of type T, it is adjusted by std::decay
 template <class TEnumerable>
 decltype(auto) Cinq(TEnumerable &&container) {
-  if constexpr (is_cinq_v<std::decay_t<TEnumerable>>)
+  if constexpr (detail::is_cinq_v<std::decay_t<TEnumerable>>)
     return std::forward<TEnumerable &&>(container);
   else
-    return detail::Cinq<EnumerableSource<std::decay_t<TEnumerable>>>(std::forward<TEnumerable>(container));
+    return detail::Cinq<detail::EnumerableSource<std::decay_t<TEnumerable>>>(std::forward<TEnumerable>(container));
 }
 
 template <class T, size_t size>
 auto Cinq(T (&container)[size]) {
-  return detail::Cinq<EnumerableSource<std::array<T, size>>>(container, std::make_index_sequence<size>());
+  return detail::Cinq<detail::EnumerableSource<std::array<T, size>>>(container, std::make_index_sequence<size>());
 }
 
 template <class T, size_t size>
 auto Cinq(const T (&container)[size]) {
-  return detail::Cinq<EnumerableSource<std::array<T, size>>>(container, std::make_index_sequence<size>());
+  return detail::Cinq<detail::EnumerableSource<std::array<T, size>>>(container, std::make_index_sequence<size>());
 }
 
 template <class TEnumerable>
 auto Cinq(std::reference_wrapper<TEnumerable> container) {
-  return detail::Cinq<EnumerableSource<TEnumerable &>>(container.get());
+  return detail::Cinq<detail::EnumerableSource<TEnumerable &>>(container.get());
 }
 
 } // namespace cinq_v3

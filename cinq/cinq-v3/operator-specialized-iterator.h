@@ -7,8 +7,8 @@
 
 #include "operator-category.h"
 
-namespace cinq_v3 {
-template <class TSource, class TFn, EnumerableCategory Category, OperatorType Operator, class... TRestSources>
+namespace cinq_v3::detail {
+template <EnumerableCategory Category, OperatorType Operator, class TFn, class... TSources>
 class Enumerable;
 
 // For each category/Operator, specialize this class to provide Iterator implementation.
@@ -16,11 +16,11 @@ template <class TEnumerable>
 class OperatorSpecializedIterator;
 
 template <class TSource, class TFn>
-class OperatorSpecializedIterator<Enumerable<TSource, TFn, EnumerableCategory::Producer, OperatorType::SelectMany>> {
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Producer, OperatorType::SelectMany, TFn, TSource>> {
 public:
-  using Enumerable = Enumerable<TSource, TFn, EnumerableCategory::Producer, OperatorType::SelectMany>;
+  using Enumerable = Enumerable<EnumerableCategory::Producer, OperatorType::SelectMany, TFn, TSource>;
 
-  using SourceIterator = typename Enumerable::SourceIterator;
+  using SourceIterator = typename Enumerable::template SourceIterator<0>;
 
   using ProducedEnumerable = decltype(std::declval<TFn>()(*std::declval<SourceIterator>()));
   using ProducedIterator = decltype(std::cbegin(std::declval<ProducedEnumerable>()));
@@ -92,7 +92,7 @@ public:
 
 private:
   void InitalizeNewProducedEnumerable(SourceIterator &iter) {
-    if (iter == std::cend(enumerable_->source_))
+    if (iter == std::cend(enumerable_->SourceFront()))
       return ;
 
     produced_enumerable_ = std::make_shared<ProducedEnumerableHolder>(enumerable_->fn_(*iter));
@@ -104,8 +104,8 @@ private:
 
   bool is_past_the_end_iterator_;
 
-  SourceIterator first_ = std::cbegin(enumerable_->source_);
-  SourceIterator last_ = std::cend(enumerable_->source_);
+  SourceIterator first_ = std::cbegin(enumerable_->SourceFront());
+  SourceIterator last_ = std::cend(enumerable_->SourceFront());
 
   std::shared_ptr<ProducedEnumerableHolder> produced_enumerable_;
   ProducedIterator produced_first_;
@@ -113,17 +113,17 @@ private:
 };
 
 template <class TSource, class TFn>
-class OperatorSpecializedIterator<Enumerable<TSource, TFn, EnumerableCategory::Producer, OperatorType::Select>> {
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Producer, OperatorType::Select, TFn, TSource>> {
 public:
-  using Enumerable = Enumerable<TSource, TFn, EnumerableCategory::Producer, OperatorType::Select>;
+  using Enumerable = Enumerable<EnumerableCategory::Producer, OperatorType::Select, TFn, TSource>;
 
-  using SourceIterator = typename Enumerable::SourceIterator;
+  using SourceIterator = typename Enumerable::template SourceIterator<0>;
 
   using value_type = std::invoke_result_t<TFn, const typename SourceIterator::value_type &>;
 
   OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
     : enumerable_(enumerable),
-      iterator_(is_past_the_end_iteratorator ? std::cend(enumerable_->source_) : std::cbegin(enumerable_->source_)) {}
+      iterator_(is_past_the_end_iteratorator ? std::cend(enumerable_->SourceFront()) : std::cbegin(enumerable_->SourceFront())) {}
 
   OperatorSpecializedIterator(const OperatorSpecializedIterator &) = default;
   OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
@@ -160,25 +160,17 @@ private:
   SourceIterator iterator_;
 };
 
-template <class Fn, class Arg1, class Arg2, class = std::invoke_result_t<Fn, Arg>>
-constexpr bool is_callable(int) { return true; }
-template <class Fn, class Arg1, class Arg2>
-constexpr bool is_callable(...) { return false; }
-
-template <class T>
-using add_const_on_rvalue_reference_v = std::conditional_t<std::is_rvalue_reference_v<T>, const std::remove_reference_t<T> &, T>;
-
 template <class TSource, class TFn, class TSource2>
-class OperatorSpecializedIterator<Enumerable<TSource, TFn, EnumerableCategory::Producer, OperatorType::Join, TSource2>> {
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Producer, OperatorType::Join, TFn, TSource, TSource2>> {
 public:
-  using Enumerable = Enumerable<TSource, TFn, EnumerableCategory::Producer, OperatorType::Join, TSource2>;
+  using Enumerable = Enumerable<EnumerableCategory::Producer, OperatorType::Join, TFn, TSource, TSource2>;
 
-  using SourceIterator = typename Enumerable::SourceIterator;
-  using SourceIterator2 = typename Enumerable::SourceIterator2;
+  using SourceIterator = typename Enumerable::template SourceIterator<0>;
+  using SourceIterator2 = typename Enumerable::template SourceIterator<1>;
 
   using value_type = std::tuple<
-    add_const_on_rvalue_reference_v<decltype(*std::declval<SourceIterator>())>,
-    add_const_on_rvalue_reference_v<decltype(*std::declval<SourceIterator>())>
+    cinq::utility::add_const_on_rvalue_reference_v<decltype(*std::declval<SourceIterator>())>,
+    cinq::utility::add_const_on_rvalue_reference_v<decltype(*std::declval<SourceIterator>())>
   >;
 
   OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
@@ -191,7 +183,7 @@ public:
   OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
 
   value_type operator*() {
-    return value_type(*first_, *first2_);
+    return enumerable_->fn_(value_type(*first_, *first2_));
   }
 
   friend bool operator!=(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
@@ -207,7 +199,7 @@ public:
     ++first2_;
     if (!(first2_ != last2_)) {
       first2_.~SourceIterator2();
-      new(&first2_) SourceIterator2(std::begin(enumerable_->source2_));
+      new(&first2_) SourceIterator2(std::begin(enumerable_->template GetSource<1>()));
       ++first_;
     }
     return *this;
@@ -225,19 +217,19 @@ private:
 
   bool is_past_the_end_iteratorator_;
 
-  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->source_) : std::cbegin(enumerable_->source_);
-  SourceIterator last_ = std::cend(enumerable_->source_);
+  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->GetSource<0>()) : std::cbegin(enumerable_->GetSource<0>());
+  SourceIterator last_ = std::cend(enumerable_->GetSource<0>());
 
-  SourceIterator2 first2_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->source2_) : std::cbegin(enumerable_->source2_);
-  SourceIterator2 last2_ = std::cend(enumerable_->source2_);
+  SourceIterator2 first2_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->GetSource<1>()) : std::cbegin(enumerable_->GetSource<1>());
+  SourceIterator2 last2_ = std::cend(enumerable_->GetSource<1>());
 };
 
 template <class TSource, class TFn>
-class OperatorSpecializedIterator<Enumerable<TSource, TFn, EnumerableCategory::Subrange, OperatorType::Where>> {
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Subrange, OperatorType::Where, TFn, TSource>> {
 public:
-  using Enumerable = Enumerable<TSource, TFn, EnumerableCategory::Subrange, OperatorType::Where>;
+  using Enumerable = Enumerable<EnumerableCategory::Subrange, OperatorType::Where, TFn, TSource>;
 
-  using SourceIterator = typename Enumerable::SourceIterator;
+  using SourceIterator = typename Enumerable::template SourceIterator<0>;
 
   using value_type = typename SourceIterator::value_type;
 
@@ -283,12 +275,12 @@ private:
       ++first_;
   }
 
-  const Enumerable * const enumerable_;
+  const Enumerable *enumerable_;
 
-  const bool is_past_the_end_iteratorator_;
+  bool is_past_the_end_iteratorator_;
 
-  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->source_) : std::cbegin(enumerable_->source_);
-  SourceIterator last_ = std::cend(enumerable_->source_);
+  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->SourceFront()) : std::cbegin(enumerable_->SourceFront());
+  SourceIterator last_ = std::cend(enumerable_->SourceFront());
 };
 
-} // namespace cinq_v3
+} // namespace cinq_v3::detail

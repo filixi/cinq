@@ -1,6 +1,6 @@
 #pragma once
 
-namespace cinq_v3 {
+namespace cinq_v3::detail {
 enum class EnumerableCategory : int {
   Producer, // SelectMany, Join
   Subrange, // Where, Take, Skip, TakeWhile, Distinct
@@ -29,4 +29,4 @@ enum class OperatorType : int {
   Where
 };
 
-} // namespace cinq_v3
+} // namespace cinq_v3::detail
