@@ -11,11 +11,33 @@ namespace cinq_v3::detail {
 template <EnumerableCategory Category, OperatorType Operator, class TFn, class... TSources>
 class Enumerable;
 
+template <class ResultType>
+class BasicIterator {
+public:
+  using value_type = std::decay_t<ResultType>;
+
+  virtual ~BasicIterator() = default;
+
+  virtual bool IsPastTheEnd() const = 0;
+
+  virtual ResultType operator*() const = 0;
+  virtual const value_type *operator->() const = 0;
+
+  virtual BasicIterator &operator++() = 0;
+
+  virtual bool operator!=(const BasicIterator &rhs) const = 0;
+  virtual bool operator==(const BasicIterator &rhs) final {
+    return !this->operator!=(rhs);
+  }
+
+  virtual std::unique_ptr<BasicIterator> Clone() const = 0;
+};
+
 // For each category/Operator, specialize this class to provide Iterator implementation.
 template <class TEnumerable>
 class OperatorSpecializedIterator;
 
-template <class TSource, class TFn>
+template <class TFn, class TSource>
 class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Producer, OperatorType::SelectMany, TFn, TSource>> {
 public:
   using Enumerable = Enumerable<EnumerableCategory::Producer, OperatorType::SelectMany, TFn, TSource>;
@@ -25,94 +47,160 @@ public:
   using ProducedEnumerable = decltype(std::declval<TFn>()(*std::declval<SourceIterator>()));
   using ProducedIterator = decltype(std::cbegin(std::declval<ProducedEnumerable>()));
 
-  using value_type = std::decay_t<decltype(*std::declval<ProducedIterator>())>;
+  using ResultType = decltype(*std::declval<ProducedIterator>());
+  using value_type = std::decay_t<ResultType>;
 
-  struct ProducedEnumerableHolder {
-    // need to check for copy elision
-    ProducedEnumerableHolder(ProducedEnumerable produced_enumerable)
-      : produced_enumerable_(produced_enumerable) {}
+  using BaseIterator = BasicIterator<ResultType>;
 
-    auto begin() const {
-      return std::cbegin(produced_enumerable_);
+  class BeginIterator : public BaseIterator {
+  public:
+    struct ProducedEnumerableHolder {
+      // need to check for copy elision
+      ProducedEnumerableHolder(ProducedEnumerable produced_enumerable)
+        : produced_enumerable_(produced_enumerable) {}
+
+      auto begin() const {
+        return std::cbegin(produced_enumerable_);
+      }
+
+      auto end() const {
+        return std::cend(produced_enumerable_);
+      }
+
+      ProducedEnumerable produced_enumerable_;
+    };
+
+    BeginIterator(const Enumerable *enumerable)
+      : enumerable_(enumerable) {
+      InitalizeNewProducedEnumerable(first_);
     }
 
-    auto end() const {
-      return std::cend(produced_enumerable_);
+    BeginIterator(const BeginIterator &) = default;
+    BeginIterator(BeginIterator &&) = default;
+
+    BeginIterator &operator=(const BeginIterator &) = default;
+    BeginIterator &operator=(BeginIterator &&) = default;
+  
+    BeginIterator &operator++() override {
+      ++produced_first_;
+
+      while (produced_first_ == std::cend(*produced_enumerable_)) {
+        ++first_;
+        if (first_ == last_)
+          return *this;
+        InitalizeNewProducedEnumerable(first_);
+      }
+
+      return *this;
     }
 
-    ProducedEnumerable produced_enumerable_;
+    ResultType operator*() const override {
+      return *produced_first_;
+    }
+
+    const value_type *operator->() const override {
+      return std::addressof(*produced_first_);
+    }
+
+    bool operator!=(const BasicIterator<ResultType> &rhs) const override {
+      const BeginIterator &lhs = *this;
+      return !(lhs.IsPastTheEnd() && rhs.IsPastTheEnd()) &&
+        (!rhs.IsPastTheEnd() || lhs.first_ != lhs.last_ && lhs.produced_first_ != lhs.produced_last_);
+    }
+
+    std::unique_ptr<BasicIterator<ResultType>> Clone() const override {
+      return std::make_unique<BeginIterator>(*this);
+    }
+
+    bool IsPastTheEnd() const override { return false; }
+
+  private:
+    void InitalizeNewProducedEnumerable(SourceIterator &iter) {
+      if (iter == std::cend(enumerable_->SourceFront()))
+        return ;
+
+      produced_enumerable_ = std::make_shared<ProducedEnumerableHolder>(enumerable_->fn_(*iter));
+      produced_first_ = std::cbegin(*produced_enumerable_);
+      produced_last_ = std::cend(*produced_enumerable_);
+    }
+
+    const Enumerable *enumerable_;
+
+    SourceIterator first_ = std::cbegin(enumerable_->SourceFront());
+    SourceIterator last_ = std::cend(enumerable_->SourceFront());
+
+    std::shared_ptr<ProducedEnumerableHolder> produced_enumerable_;
+    ProducedIterator produced_first_;
+    ProducedIterator produced_last_;
   };
 
-  OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iterator)
-    : enumerable_(enumerable), is_past_the_end_iterator_(is_past_the_end_iterator) {
-    if (!is_past_the_end_iterator_)
-      InitalizeNewProducedEnumerable(first_);
-  }
+  class EndIterator : public BaseIterator {
+  public:
+    EndIterator(const Enumerable *) {}
 
-  OperatorSpecializedIterator(const OperatorSpecializedIterator &) = default;
-  OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
+    bool IsPastTheEnd() const override { return true; }
 
-  OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &) = default;
-  OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
-  
-  OperatorSpecializedIterator &operator++() {
-    assert(!is_past_the_end_iterator_);
-    ++produced_first_;
+    ResultType operator*() const override { throw std::runtime_error("Dereferencing past-the-end iterator."); }
+    const value_type *operator->() const override { throw std::runtime_error("Dereferencing past-the-end iterator."); }
 
-    while (produced_first_ == std::cend(*produced_enumerable_)) {
-      ++first_;
-      if (first_ == last_)
-        return *this;
-      InitalizeNewProducedEnumerable(first_);
+    EndIterator &operator++() override { return *this; }
+
+    bool operator!=(const BasicIterator<ResultType> &rhs) const override {
+      const EndIterator &lhs = *this;
+      return !(lhs.IsPastTheEnd() && rhs.IsPastTheEnd()) &&
+        (!rhs.IsPastTheEnd() || rhs.operator!=(*this));
     }
 
-    return *this;
+    std::unique_ptr<BasicIterator<ResultType>> Clone() const override {
+      return std::make_unique<EndIterator>(nullptr);
+    }
+  };
+
+  OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iterator) {
+    if (is_past_the_end_iterator)
+      iterator_ = std::make_unique<EndIterator>(enumerable);
+    else
+      iterator_ = std::make_unique<BeginIterator>(enumerable);
   }
 
-  OperatorSpecializedIterator &operator++(int) {
-    assert(!is_past_the_end_iterator_);
+  OperatorSpecializedIterator(const OperatorSpecializedIterator &rhs) : iterator_(rhs.iterator_.get()->Clone()) {}
+  OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
+
+  OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &rhs) {
+    iterator_ = rhs.iterator_.get()->Clone();
+  }
+  OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
+
+  decltype(auto) operator*() {
+    return iterator_.get()->operator*();
+  }
+  auto operator->() {
+    return iterator_.get()->operator->();
+  }
+
+  OperatorSpecializedIterator &operator++() {
+    ++*iterator_;
+    return *this;
+  }
+  OperatorSpecializedIterator operator++(int) {
     OperatorSpecializedIterator prev(*this);
-    ++*this;
+    ++*iterator_;
     return prev;
   }
 
-  auto &operator*() const {
-    assert(!is_past_the_end_iterator_);
-    return *produced_first_;
-  }
-
   friend bool operator!=(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
-    return !(lhs.is_past_the_end_iterator_ && rhs.is_past_the_end_iterator_) &&
-      (!rhs.is_past_the_end_iterator_ || lhs.first_ != lhs.last_ && lhs.produced_first_ != lhs.produced_last_);
+    return *lhs.iterator_ != *rhs.iterator_;
   }
 
   friend bool operator==(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
-    return !(lhs != rhs);
+    return *lhs.iterator_ == *rhs.iterator_;
   }
 
 private:
-  void InitalizeNewProducedEnumerable(SourceIterator &iter) {
-    if (iter == std::cend(enumerable_->SourceFront()))
-      return ;
-
-    produced_enumerable_ = std::make_shared<ProducedEnumerableHolder>(enumerable_->fn_(*iter));
-    produced_first_ = std::cbegin(*produced_enumerable_);
-    produced_last_ = std::cend(*produced_enumerable_);
-  }
-
-  const Enumerable *enumerable_;
-
-  bool is_past_the_end_iterator_;
-
-  SourceIterator first_ = std::cbegin(enumerable_->SourceFront());
-  SourceIterator last_ = std::cend(enumerable_->SourceFront());
-
-  std::shared_ptr<ProducedEnumerableHolder> produced_enumerable_;
-  ProducedIterator produced_first_;
-  ProducedIterator produced_last_;
+  std::unique_ptr<BaseIterator> iterator_;
 };
 
-template <class TSource, class TFn>
+template <class TFn, class TSource>
 class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Producer, OperatorType::Select, TFn, TSource>> {
 public:
   using Enumerable = Enumerable<EnumerableCategory::Producer, OperatorType::Select, TFn, TSource>;
@@ -160,7 +248,7 @@ private:
   SourceIterator iterator_;
 };
 
-template <class TSource, class TFn, class TSource2>
+template <class TFn, class TSource, class TSource2>
 class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Producer, OperatorType::Join, TFn, TSource, TSource2>> {
 public:
   using Enumerable = Enumerable<EnumerableCategory::Producer, OperatorType::Join, TFn, TSource, TSource2>;
@@ -224,7 +312,7 @@ private:
   SourceIterator2 last2_ = std::cend(enumerable_->GetSource<1>());
 };
 
-template <class TSource, class TFn>
+template <class TFn, class TSource>
 class OperatorSpecializedIterator<Enumerable<EnumerableCategory::Subrange, OperatorType::Where, TFn, TSource>> {
 public:
   using Enumerable = Enumerable<EnumerableCategory::Subrange, OperatorType::Where, TFn, TSource>;

@@ -93,7 +93,6 @@ public:
 
   using ResultIterator = Iterator;
 
-  static_assert(!std::is_polymorphic_v<Iterator>, "Iterator should not be polymorphic.");
   static_assert(sizeof(Iterator) == sizeof(OperatorSpecializedIterator<Enumerable>), "Iterator should not introduce any non static member variable.");
 
   Iterator begin() const {
@@ -104,7 +103,7 @@ public:
     return Iterator(this, true); // past end iterator
   }
 
-protected:
+private:
   TFn fn_;
 };
 
