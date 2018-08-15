@@ -1,4 +1,4 @@
-Cinq(C++ inefficient query) is a header only, modern C++ library. This library has no third-party dependency.
+Cinq is a header only, modern C++ library. This library has no third-party dependency.
 
 This project planned to provide identical API and functionality in lastest successive two C++ standards(currently C++17 and C++14).
 
