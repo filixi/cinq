@@ -5,6 +5,8 @@
 #include "operator-specialized-iterator.h"
 #include "../utility.h"
 
+#include <variant>
+
 namespace cinq_v3::detail {
 
 template <class TEnumerable>
@@ -53,7 +55,31 @@ public:
   template <size_t index>
   using SourceIterator = typename std::tuple_element_t<index, std::tuple<TSources...>>::ResultIterator;
 
+  using IteratorTuple = std::tuple<typename TSources::ResultIterator...>;
+
+  IteratorTuple GetBeginIteratorTuple() const {
+    return GetBeginIteratorTuple(std::index_sequence_for<TSources...>());
+  }
+
+  IteratorTuple GetEndIteratorTuple() const {
+    return GetEndIteratorTuple(std::index_sequence_for<TSources...>());
+  }
+
+  const std::tuple<TSources...> &GetSourceTuple() const {
+    return sources_;
+  }
+
 private:
+  template <size_t... index>
+  IteratorTuple GetBeginIteratorTuple(std::index_sequence<index...>) const {
+    return std::make_tuple(std::cbegin(GetSource<index>())...);
+  }
+
+  template <size_t... index>
+  IteratorTuple GetEndIteratorTuple(std::index_sequence<index...>) const {
+    return std::make_tuple(std::cend(GetSource<index>())...);
+  }
+
   std::tuple<TSources...> sources_;
 };
 

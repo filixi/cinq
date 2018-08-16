@@ -4,6 +4,9 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
+#include <unordered_set>
+#include <variant>
 
 #include "operator-category.h"
 
@@ -163,19 +166,19 @@ public:
       iterator_ = std::make_unique<BeginIterator>(enumerable);
   }
 
-  OperatorSpecializedIterator(const OperatorSpecializedIterator &rhs) : iterator_(rhs.iterator_.get()->Clone()) {}
+  OperatorSpecializedIterator(const OperatorSpecializedIterator &rhs) : iterator_(rhs.iterator_->Clone()) {}
   OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
 
   OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &rhs) {
-    iterator_ = rhs.iterator_.get()->Clone();
+    iterator_ = rhs.iterator_->Clone();
   }
   OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
 
   decltype(auto) operator*() {
-    return iterator_.get()->operator*();
+    return iterator_->operator*();
   }
   auto operator->() {
-    return iterator_.get()->operator->();
+    return iterator_->operator->();
   }
 
   OperatorSpecializedIterator &operator++() {
@@ -369,6 +372,165 @@ private:
 
   SourceIterator first_ = is_past_the_end_iteratorator_ ? std::cend(enumerable_->SourceFront()) : std::cbegin(enumerable_->SourceFront());
   SourceIterator last_ = std::cend(enumerable_->SourceFront());
+};
+
+template <class... TSources>
+class IteratorTupleVisitor {
+  template <size_t depth = sizeof...(TSources)>
+  struct EmplaceIteratorWrapper {
+    static bool EmplaceIteratorAt(const std::tuple<TSources...> &enumerables, size_t index, IteratorTupleVisitor *p) {
+      if (index + 1 == depth) {
+        p->first_.template emplace<depth-1>(std::cbegin(std::get<depth-1>(enumerables)));
+        p->last_.template emplace<depth-1>(std::cend(std::get<depth-1>(enumerables)));
+        return true;
+      }
+      return EmplaceIteratorWrapper<depth-1>::EmplaceIteratorAt(enumerables, index, p);
+    }
+  };
+
+  template <>
+  struct EmplaceIteratorWrapper<0> {
+    static bool EmplaceIteratorAt(const std::tuple<TSources...> &, size_t, IteratorTupleVisitor *) {
+      return false;
+    }
+  };
+
+public:
+  IteratorTupleVisitor() {}
+
+  IteratorTupleVisitor(const std::tuple<TSources...> &enumerable) {
+    bool has_value = EmplaceIteratorWrapper<>::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
+
+    auto is_end = [](auto &lhs, auto &rhs) -> bool {
+      if constexpr (std::is_same_v<decltype(lhs), decltype(rhs)>)
+        return lhs == rhs;
+      throw std::runtime_error("IteratorTupleVisitor test end failure.");
+    };
+
+    while (has_value && std::visit(is_end, first_, last_))
+      has_value = EmplaceIteratorWrapper<>::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
+    is_dereferenceable_ = has_value;
+  }
+
+  template <class Fn>
+  decltype(auto) Visit(Fn &&fn) {
+    return std::visit([&fn](auto &ite) {std::invoke(std::forward<Fn>(fn), *ite);}, first_);
+  }
+
+  bool MoveToNext(const std::tuple<TSources...> &enumerable) {
+    std::visit([](auto &ite) {++ite;}, first_);
+
+    auto is_end = [](auto &lhs, auto &rhs) -> bool {
+      if constexpr (std::is_same_v<decltype(lhs), decltype(rhs)>)
+        return lhs == rhs;
+      throw std::runtime_error("IteratorTupleVisitor test end failure.");
+    };
+
+    bool has_value = true;
+    while (has_value && std::visit(is_end, first_, last_))
+      has_value = EmplaceIteratorWrapper<>::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
+
+    return is_dereferenceable_ = has_value;
+  }
+
+  bool IsValid() const {
+    return is_dereferenceable_;
+  }
+
+  friend bool operator==(const IteratorTupleVisitor &lhs, const IteratorTupleVisitor &rhs) {
+    return lhs.current_enumerable_ == rhs.current_enumerable_ &&
+      lhs.is_dereferenceable_ == rhs.is_dereferenceable_ &&
+      lhs.first_ == rhs.first_;
+  }
+
+private:
+  std::variant<typename TSources::ResultIterator...> first_;
+  std::variant<typename TSources::ResultIterator...> last_;
+  size_t current_enumerable_ = 0;
+
+  bool is_dereferenceable_ = false;
+};
+
+template <class TFn, class... TSources>
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, TFn, TSources...>> {
+public:
+  static_assert(sizeof...(TSources) > 1);
+
+  using Enumerable = Enumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, TFn, TSources...>;
+  
+  using IteratorTuple = typename Enumerable::IteratorTuple;
+
+  using value_type = typename Enumerable::template SourceIterator<0>::value_type;
+
+  OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
+    : enumerable_(enumerable), is_past_the_end_iteratorator_(is_past_the_end_iteratorator) {
+    if (!is_past_the_end_iteratorator)
+      FindNextValid();  
+  }
+
+  OperatorSpecializedIterator(const OperatorSpecializedIterator &) = default;
+  OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
+
+  OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &) = default;
+  OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
+
+  const value_type &operator*() {
+    return *current_;
+  }
+
+  friend bool operator!=(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
+    auto b = !(lhs == rhs);
+    return b;
+  }
+
+  friend bool operator==(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
+    return lhs.is_past_the_end_iteratorator_ && rhs.is_past_the_end_iteratorator_ ||
+      rhs.is_past_the_end_iteratorator_ && !lhs.visitor.IsValid() ||
+      lhs.is_past_the_end_iteratorator_ && !rhs.visitor.IsValid() ||
+      lhs.visitor == rhs.visitor;
+  }
+
+  OperatorSpecializedIterator &operator++() {
+    FindNextValid();
+    return *this;
+  }
+
+  OperatorSpecializedIterator operator++(int) {
+    OperatorSpecializedIterator previous(*this);
+    ++*this;
+    return previous;
+  }
+
+private:
+  void FindNextValid() {
+    assert(!is_past_the_end_iteratorator_);
+    bool succeed = false;
+    for (;;) {
+      visitor.Visit([this, &succeed](auto &x) {
+        if constexpr (std::is_convertible_v<decltype(x), value_type>)
+          std::tie(current_, succeed) = values_.insert(x);
+        else
+          std::tie(current_, succeed) = values_.insert(static_cast<value_type>(x));
+      });
+
+      if (succeed)
+        break;
+      if (!visitor.MoveToNext(enumerable_->GetSourceTuple()))
+        break;
+    }
+  }
+
+  const Enumerable *enumerable_;
+
+  bool is_past_the_end_iteratorator_;
+
+  IteratorTupleVisitor<TSources...> visitor = is_past_the_end_iteratorator_ ? IteratorTupleVisitor<TSources...>{} : enumerable_->GetSourceTuple();
+
+  using SetType = std::conditional_t<cinq::utility::is_hashable_v<value_type>,
+    std::unordered_set<value_type>, std::set<value_type>>;
+
+  SetType values_;
+  typename SetType::iterator current_;
 };
 
 } // namespace cinq_v3::detail
