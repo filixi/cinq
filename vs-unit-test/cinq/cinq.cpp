@@ -197,6 +197,13 @@ void TestCinqToVector() {
   assert(select_many.size() == 5);
 }
 
+void TestCinqIntersect() {
+  std::vector<int> a{1,2,3}, b{1,5,2};
+
+  auto result = cinq_v3::Cinq(a).Intersect(b).ToVector();
+  assert(result.size() == 4);
+}
+
 int main() {
   std::clog << "cinq-v3 test" << std::endl;
 
@@ -207,6 +214,7 @@ int main() {
   TestCinqJoin();
   TestCinqWhere();
   TestCinqToVector();
+  TestCinqIntersect();
 
   std::clog << std::endl;
   std::clog << "test finished" << std::endl;

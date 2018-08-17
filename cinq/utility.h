@@ -51,6 +51,13 @@ inline constexpr bool is_callable_v = is_callable<Fn, Arg1, Arg2>(0);
 template <class T>
 using add_const_on_rvalue_reference_v = std::conditional_t<std::is_rvalue_reference_v<T>, const std::remove_reference_t<T> &, T>;
 
+template <class T, class = void>
+struct is_hashable : std::true_type {};
+template <class T>
+struct is_hashable<T, std::void_t<std::hash<T>>> : std::false_type {};
+template <class T>
+inline constexpr bool is_hashable_v = is_hashable<T>::value;
+
 } // namespace utility
 
 } // namespace cinq

@@ -71,6 +71,18 @@ public:
         std::move(inner_select)
       );
   }
+
+  template <class Source, class... Rest>
+  auto Intersect(Source &&sources, Rest&&... rest) && {
+    using IntersectType = Enumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, bool, TEnumerable, 
+      decltype(cinq_v3::Cinq(std::forward<Source>(sources))), decltype(cinq_v3::Cinq(std::forward<Rest>(rest)))...>;
+    return Cinq<IntersectType>(
+        false,
+        std::move(root_),
+        cinq_v3::Cinq(std::forward<Source>(sources)),
+        cinq_v3::Cinq(std::forward<Rest>(rest))...
+      );
+  }
  
   auto ToVector() && {
     using value_type = std::decay_t<typename std::decay_t<decltype(std::cbegin(*this))>::value_type>;
