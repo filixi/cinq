@@ -57,14 +57,6 @@ public:
 
   using IteratorTuple = std::tuple<typename TSources::ResultIterator...>;
 
-  IteratorTuple GetBeginIteratorTuple() const {
-    return GetBeginIteratorTuple(std::index_sequence_for<TSources...>());
-  }
-
-  IteratorTuple GetEndIteratorTuple() const {
-    return GetEndIteratorTuple(std::index_sequence_for<TSources...>());
-  }
-
   const std::tuple<TSources...> &GetSourceTuple() const {
     return sources_;
   }
@@ -93,6 +85,7 @@ template <EnumerableCategory Category, OperatorType Operator, class TFn, class..
 class Enumerable : private MultipleSources<TSources...> {
 protected:
   friend class OperatorSpecializedIterator<Enumerable>;
+  friend class MultiVisitorSetIterator<Operator, TFn, TSources...>;
 
 public:
   template <class Fn>
@@ -128,7 +121,6 @@ public:
   Iterator end() const {
     return Iterator(this, true); // past end iterator
   }
-
 private:
   TFn fn_;
 };

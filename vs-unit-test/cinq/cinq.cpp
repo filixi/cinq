@@ -198,10 +198,42 @@ void TestCinqToVector() {
 }
 
 void TestCinqIntersect() {
-  std::vector<int> a{1,2,3}, b{1,5,2};
+  std::vector<int> a{7,2,3,1}, b{1,5,2};
 
-  auto result = cinq_v3::Cinq(a).Intersect(b).ToVector();
-  assert(result.size() == 4);
+  auto result1 = cinq_v3::Cinq(a).Intersect(b).ToVector();
+  assert(result1.size() == 2);
+
+  auto result2 = cinq_v3::Cinq(a).Intersect(std::vector<int>{}).ToVector();
+  assert(result2.size() == 0);
+
+  auto result3 = cinq_v3::Cinq(std::vector<int>{}).Intersect(a).ToVector();
+  assert(result3.size() == 0);
+}
+
+void TestCinqUnion() {
+  std::vector<int> a{7,2,3,1}, b{1,5,2};
+
+  auto result1 = cinq_v3::Cinq(a).Union(b).ToVector();
+  assert(result1.size() == 5);
+
+  auto result2 = cinq_v3::Cinq(a).Union(std::vector<int>{}).ToVector();
+  assert(result2.size() == 4);
+
+  auto result3 = cinq_v3::Cinq(std::vector<int>{}).Union(a).ToVector();
+  assert(result3.size() == 4);
+}
+
+void TestCinqConcat() {
+  std::vector<int> a{7,2,3,1}, b{1,5,2};
+
+  auto result1 = cinq_v3::Cinq(a).Concat(b).ToVector();
+  assert(result1.size() == 7);
+
+  auto result2 = cinq_v3::Cinq(a).Concat(std::vector<int>{}).ToVector();
+  assert(result2.size() == 4);
+
+  auto result3 = cinq_v3::Cinq(std::vector<int>{}).Concat(a).ToVector();
+  assert(result3.size() == 4);
 }
 
 int main() {
@@ -215,6 +247,8 @@ int main() {
   TestCinqWhere();
   TestCinqToVector();
   TestCinqIntersect();
+  TestCinqUnion();
+  TestCinqConcat();
 
   std::clog << std::endl;
   std::clog << "test finished" << std::endl;

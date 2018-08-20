@@ -3,8 +3,10 @@
 #include <cassert>
 
 #include <iostream>
+#include <map>
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <unordered_set>
 #include <variant>
 
@@ -13,28 +15,6 @@
 namespace cinq_v3::detail {
 template <EnumerableCategory Category, OperatorType Operator, class TFn, class... TSources>
 class Enumerable;
-
-template <class ResultType>
-class BasicIterator {
-public:
-  using value_type = std::decay_t<ResultType>;
-
-  virtual ~BasicIterator() = default;
-
-  virtual bool IsPastTheEnd() const = 0;
-
-  virtual ResultType operator*() const = 0;
-  virtual const value_type *operator->() const = 0;
-
-  virtual BasicIterator &operator++() = 0;
-
-  virtual bool operator!=(const BasicIterator &rhs) const = 0;
-  virtual bool operator==(const BasicIterator &rhs) final {
-    return !this->operator!=(rhs);
-  }
-
-  virtual std::unique_ptr<BasicIterator> Clone() const = 0;
-};
 
 // For each category/Operator, specialize this class to provide Iterator implementation.
 template <class TEnumerable>
@@ -53,7 +33,25 @@ public:
   using ResultType = decltype(*std::declval<ProducedIterator>());
   using value_type = std::decay_t<ResultType>;
 
-  using BaseIterator = BasicIterator<ResultType>;
+  class BaseIterator {
+  public:
+    using value_type = std::decay_t<ResultType>;
+
+    virtual ~BaseIterator() = default;
+
+    virtual bool IsPastTheEnd() const = 0;
+
+    virtual ResultType operator*() const = 0;
+
+    virtual BaseIterator &operator++() = 0;
+
+    virtual bool operator!=(const BaseIterator &rhs) const = 0;
+    virtual bool operator==(const BaseIterator &rhs) final {
+      return !this->operator!=(rhs);
+    }
+
+    virtual std::unique_ptr<BaseIterator> Clone() const = 0;
+  };
 
   class BeginIterator : public BaseIterator {
   public:
@@ -101,17 +99,13 @@ public:
       return *produced_first_;
     }
 
-    const value_type *operator->() const override {
-      return std::addressof(*produced_first_);
-    }
-
-    bool operator!=(const BasicIterator<ResultType> &rhs) const override {
+    bool operator!=(const BaseIterator &rhs) const override {
       const BeginIterator &lhs = *this;
       return !(lhs.IsPastTheEnd() && rhs.IsPastTheEnd()) &&
         (!rhs.IsPastTheEnd() || lhs.first_ != lhs.last_ && lhs.produced_first_ != lhs.produced_last_);
     }
 
-    std::unique_ptr<BasicIterator<ResultType>> Clone() const override {
+    std::unique_ptr<BaseIterator> Clone() const override {
       return std::make_unique<BeginIterator>(*this);
     }
 
@@ -143,18 +137,17 @@ public:
 
     bool IsPastTheEnd() const override { return true; }
 
-    ResultType operator*() const override { throw std::runtime_error("Dereferencing past-the-end iterator."); }
-    const value_type *operator->() const override { throw std::runtime_error("Dereferencing past-the-end iterator."); }
+    ResultType operator*() const override { throw std::runtime_error("Can not dereference past-the-end iterator."); }
 
     EndIterator &operator++() override { return *this; }
 
-    bool operator!=(const BasicIterator<ResultType> &rhs) const override {
+    bool operator!=(const BaseIterator &rhs) const override {
       const EndIterator &lhs = *this;
       return !(lhs.IsPastTheEnd() && rhs.IsPastTheEnd()) &&
         (!rhs.IsPastTheEnd() || rhs.operator!=(*this));
     }
 
-    std::unique_ptr<BasicIterator<ResultType>> Clone() const override {
+    std::unique_ptr<BaseIterator> Clone() const override {
       return std::make_unique<EndIterator>(nullptr);
     }
   };
@@ -174,11 +167,8 @@ public:
   }
   OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
 
-  decltype(auto) operator*() {
+  ResultType operator*() const {
     return iterator_->operator*();
-  }
-  auto operator->() {
-    return iterator_->operator->();
   }
 
   OperatorSpecializedIterator &operator++() {
@@ -211,6 +201,7 @@ public:
   using SourceIterator = typename Enumerable::template SourceIterator<0>;
 
   using value_type = std::invoke_result_t<TFn, const typename SourceIterator::value_type &>;
+  using ResultType = std::invoke_result_t<TFn, decltype(*std::declval<SourceIterator>())>;
 
   OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
     : enumerable_(enumerable),
@@ -222,7 +213,7 @@ public:
   OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &) = default;
   OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
 
-  decltype(auto) operator*() {
+  ResultType operator*() const {
     return enumerable_->fn_(*iterator_);
   }
 
@@ -264,6 +255,8 @@ public:
     cinq::utility::add_const_on_rvalue_reference_v<decltype(*std::declval<SourceIterator>())>
   >;
 
+  using ResultType = std::invoke_result_t<TFn, value_type>;
+
   OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
     : enumerable_(enumerable), is_past_the_end_iteratorator_(is_past_the_end_iteratorator) {}
 
@@ -273,7 +266,7 @@ public:
   OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &) = default;
   OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
 
-  value_type operator*() {
+  ResultType operator*() const {
     return enumerable_->fn_(value_type(*first_, *first2_));
   }
 
@@ -324,6 +317,8 @@ public:
 
   using value_type = typename SourceIterator::value_type;
 
+  using ResultType = decltype(*std::declval<SourceIterator>());
+
   OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
     : enumerable_(enumerable), is_past_the_end_iteratorator_(is_past_the_end_iteratorator) {
     FindNextValideElement();
@@ -335,7 +330,7 @@ public:
   OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &) = default;
   OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
 
-  decltype(auto) operator*() {
+  ResultType operator*() const {
     return *first_;
   }
 
@@ -413,8 +408,11 @@ public:
   }
 
   template <class Fn>
-  decltype(auto) Visit(Fn &&fn) {
-    return std::visit([&fn](auto &ite) {std::invoke(std::forward<Fn>(fn), *ite);}, first_);
+  decltype(auto) Visit(Fn &&fn) const {
+    return std::visit([&fn](auto &ite) {
+        return std::invoke(std::forward<Fn>(fn), *ite);
+      },
+      first_);
   }
 
   bool MoveToNext(const std::tuple<TSources...> &enumerable) {
@@ -451,43 +449,67 @@ private:
   bool is_dereferenceable_ = false;
 };
 
-template <class TFn, class... TSources>
-class OperatorSpecializedIterator<Enumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, TFn, TSources...>> {
+template <OperatorType Operator, class TFn, class... TSources>
+class MultiVisitorSetIterator {
 public:
   static_assert(sizeof...(TSources) > 1);
 
-  using Enumerable = Enumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, TFn, TSources...>;
+  using Enumerable = Enumerable<EnumerableCategory::SetOperation, Operator, TFn, TSources...>;
   
   using IteratorTuple = typename Enumerable::IteratorTuple;
 
   using value_type = typename Enumerable::template SourceIterator<0>::value_type;
 
-  OperatorSpecializedIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
-    : enumerable_(enumerable), is_past_the_end_iteratorator_(is_past_the_end_iteratorator) {
-    if (!is_past_the_end_iteratorator)
-      FindNextValid();  
-  }
+  MultiVisitorSetIterator(const MultiVisitorSetIterator &) = default;
+  MultiVisitorSetIterator(MultiVisitorSetIterator &&) = default;
 
-  OperatorSpecializedIterator(const OperatorSpecializedIterator &) = default;
-  OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
+  virtual ~MultiVisitorSetIterator() = default;
 
-  OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &) = default;
-  OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
+  MultiVisitorSetIterator &operator=(const MultiVisitorSetIterator &) = default;
+  MultiVisitorSetIterator &operator=(MultiVisitorSetIterator &&) = default;
 
-  const value_type &operator*() {
-    return *current_;
-  }
-
-  friend bool operator!=(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
+  friend bool operator!=(const MultiVisitorSetIterator &lhs, const MultiVisitorSetIterator &rhs) {
     auto b = !(lhs == rhs);
     return b;
   }
 
-  friend bool operator==(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
+  friend bool operator==(const MultiVisitorSetIterator &lhs, const MultiVisitorSetIterator &rhs) {
     return lhs.is_past_the_end_iteratorator_ && rhs.is_past_the_end_iteratorator_ ||
       rhs.is_past_the_end_iteratorator_ && !lhs.visitor.IsValid() ||
       lhs.is_past_the_end_iteratorator_ && !rhs.visitor.IsValid() ||
       lhs.visitor == rhs.visitor;
+  }
+
+protected:
+  MultiVisitorSetIterator(const Enumerable *enumerable, bool is_past_the_end_iteratorator)
+    : enumerable_(enumerable), is_past_the_end_iteratorator_(is_past_the_end_iteratorator) {}
+
+  virtual void FindNextValid() = 0;
+
+  const Enumerable *enumerable_;
+
+  bool is_past_the_end_iteratorator_;
+
+  IteratorTupleVisitor<TSources...> visitor = is_past_the_end_iteratorator_ ? IteratorTupleVisitor<TSources...>{} : enumerable_->GetSourceTuple();
+};
+
+template <class TFn, class... TSources>
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::SetOperation, OperatorType::Union, TFn, TSources...>>
+  : public MultiVisitorSetIterator<OperatorType::Union, TFn, TSources...> {
+public:
+  using Base = MultiVisitorSetIterator<OperatorType::Union, TFn, TSources...>;
+
+  using value_type = typename Base::value_type;
+  using ResultType = const value_type &;
+
+  OperatorSpecializedIterator(const typename Base::Enumerable *enumerable, bool is_past_the_end_iteratorator)
+    : Base(enumerable, is_past_the_end_iteratorator) {
+    if (!is_past_the_end_iteratorator)
+      OperatorSpecializedIterator::FindNextValid();
+  }
+
+  ResultType operator*() const {
+    return *current_;
   }
 
   OperatorSpecializedIterator &operator++() {
@@ -501,36 +523,132 @@ public:
     return previous;
   }
 
-private:
-  void FindNextValid() {
-    assert(!is_past_the_end_iteratorator_);
+protected:
+  void FindNextValid() override {
+    assert(!Base::is_past_the_end_iteratorator_);
     bool succeed = false;
     for (;;) {
-      visitor.Visit([this, &succeed](auto &x) {
+      Base::visitor.Visit([this, &succeed](auto &x) {
         if constexpr (std::is_convertible_v<decltype(x), value_type>)
           std::tie(current_, succeed) = values_.insert(x);
         else
-          std::tie(current_, succeed) = values_.insert(static_cast<value_type>(x));
+          std::tie(current_, succeed) = values_.insert(static_cast<const value_type &>(x));
       });
 
       if (succeed)
         break;
-      if (!visitor.MoveToNext(enumerable_->GetSourceTuple()))
+      if (!Base::visitor.MoveToNext(Base::enumerable_->GetSourceTuple()))
         break;
     }
   }
-
-  const Enumerable *enumerable_;
-
-  bool is_past_the_end_iteratorator_;
-
-  IteratorTupleVisitor<TSources...> visitor = is_past_the_end_iteratorator_ ? IteratorTupleVisitor<TSources...>{} : enumerable_->GetSourceTuple();
 
   using SetType = std::conditional_t<cinq::utility::is_hashable_v<value_type>,
     std::unordered_set<value_type>, std::set<value_type>>;
 
   SetType values_;
   typename SetType::iterator current_;
+};
+
+template <class TFn, class... TSources>
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, TFn, TSources...>>
+  : public MultiVisitorSetIterator<OperatorType::Intersect, TFn, TSources...> {
+public:
+  using Base = MultiVisitorSetIterator<OperatorType::Intersect, TFn, TSources...>;
+
+  using value_type = typename Base::value_type;
+  using ResultType = const value_type &;
+
+  OperatorSpecializedIterator(const typename Base::Enumerable *enumerable, bool is_past_the_end_iteratorator)
+    : Base(enumerable, is_past_the_end_iteratorator) {
+    if (!is_past_the_end_iteratorator)
+      OperatorSpecializedIterator::FindNextValid();
+  }
+
+  ResultType operator*() const {
+    return current_->first;
+  }
+
+  OperatorSpecializedIterator &operator++() {
+    FindNextValid();
+    return *this;
+  }
+
+  OperatorSpecializedIterator operator++(int) {
+    OperatorSpecializedIterator previous(*this);
+    ++*this;
+    return previous;
+  }
+
+protected:
+  void FindNextValid() override {
+    assert(!Base::is_past_the_end_iteratorator_);
+    bool succeed = false;
+    for (;;) {
+      Base::visitor.Visit([this, &succeed](auto &x) {
+        // There are different approaches for this part, of which the run-time overhead is unknown,
+        // choosed the simplest one.
+        if constexpr (std::is_convertible_v<decltype(x), value_type>)
+          succeed = ++values_[x] == sizeof...(TSources);
+        else
+          succeed = ++values_[static_cast<const value_type &>(x)] == sizeof...(TSources);
+
+        if (succeed)
+          current_ = values_.find(x);
+      });
+
+      if (succeed)
+        break;
+      if (!Base::visitor.MoveToNext(Base::enumerable_->GetSourceTuple()))
+        break;
+    }
+  }
+
+  using MapType = std::conditional_t<cinq::utility::is_hashable_v<value_type>,
+    std::unordered_map<value_type, size_t>, std::map<value_type, size_t>>;
+
+  MapType values_;
+  typename MapType::iterator current_;
+};
+
+template <class TFn, class... TSources>
+class OperatorSpecializedIterator<Enumerable<EnumerableCategory::SetOperation, OperatorType::Concat, TFn, TSources...>>
+  : public MultiVisitorSetIterator<OperatorType::Concat, TFn, TSources...> {
+public:
+  using Base = MultiVisitorSetIterator<OperatorType::Concat, TFn, TSources...>;
+  using value_type = typename Base::value_type;
+
+  using ResultType = std::conditional_t<
+    cinq::utility::is_all_reference_to_same_v<decltype(*std::declval<typename TSources::ResultIterator>())...>,
+    const value_type &,
+    value_type>;
+
+  OperatorSpecializedIterator(const typename Base::Enumerable *enumerable, bool is_past_the_end_iteratorator)
+    : Base(enumerable, is_past_the_end_iteratorator) {}
+
+  ResultType operator*() const {
+    return Base::visitor.Visit([](auto &x) -> ResultType {
+        if constexpr (std::is_convertible_v<decltype(x), ResultType>)
+          return x;
+        else
+          return static_cast<ResultType>(x);
+      });
+  }
+
+  OperatorSpecializedIterator &operator++() {
+    FindNextValid();
+    return *this;
+  }
+
+  OperatorSpecializedIterator operator++(int) {
+    OperatorSpecializedIterator previous(*this);
+    ++*this;
+    return previous;
+  }
+
+protected:
+  void FindNextValid() override {
+    Base::visitor.MoveToNext(Base::enumerable_->GetSourceTuple());
+  }
 };
 
 } // namespace cinq_v3::detail
