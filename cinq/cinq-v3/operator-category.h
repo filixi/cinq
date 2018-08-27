@@ -27,7 +27,9 @@ enum class OperatorType : int {
   Select,
   Join,
   Where,
-  Intersect
+  Intersect,
+  Union,
+  Concat
 };
 
 } // namespace cinq_v3::detail

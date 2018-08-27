@@ -58,6 +58,15 @@ struct is_hashable<T, std::void_t<std::hash<T>>> : std::false_type {};
 template <class T>
 inline constexpr bool is_hashable_v = is_hashable<T>::value;
 
+template <class T0, class ...T>
+struct is_all_reference_to_same : std::conditional_t<
+  std::is_reference_v<T0> && right_fold_and_v<std::is_reference_v<T>...> && right_fold_and_v<std::is_same_v<std::decay_t<T0>, std::decay_t<T>>...>,
+  std::true_type,
+  std::false_type> {};
+
+template <class ...T>
+inline constexpr bool is_all_reference_to_same_v = is_all_reference_to_same<T...>::value;
+
 } // namespace utility
 
 } // namespace cinq
