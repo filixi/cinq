@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\cinq\cinq-v3\aggregated-functions.h" />
+    <ClInclude Include="..\..\cinq\cinq-v3\cinq.h" />
     <ClInclude Include="..\..\cinq\cinq-v3\enumerable-source.h" />
     <ClInclude Include="..\..\cinq\cinq-v3\enumerable.h" />
     <ClInclude Include="..\..\cinq\cinq-v3\operator-category.h" />
