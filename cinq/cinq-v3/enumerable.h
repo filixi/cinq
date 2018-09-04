@@ -94,6 +94,8 @@ public:
 
   class Iterator : public OperatorSpecializedIterator<Enumerable> {
   public:
+    Iterator() {}
+
     Iterator(const Enumerable *e, bool is_past_end_iterator) : OperatorSpecializedIterator<Enumerable>(e, is_past_end_iterator) {}
 
     Iterator(const Iterator &) = default;

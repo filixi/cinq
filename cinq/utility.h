@@ -49,7 +49,7 @@ template <class Fn, class Arg1, class Arg2>
 inline constexpr bool is_callable_v = is_callable<Fn, Arg1, Arg2>(0);
 
 template <class T>
-using add_const_on_rvalue_reference_v = std::conditional_t<std::is_rvalue_reference_v<T>, const std::remove_reference_t<T> &, T>;
+using add_const_on_rvalue_reference_v = std::conditional_t<std::is_rvalue_reference_v<T>, const std::remove_reference_t<T> &, std::decay_t<T>>;
 
 template <class T, class = void>
 struct is_hashable : std::true_type {};
