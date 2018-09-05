@@ -42,6 +42,10 @@ public:
       return std::cend(source_);
   }
 
+  friend TSource &&MoveSource(EnumerableSource &&source) {
+    return std::move(source.source_);
+  }
+
 private:
   TSource source_;
 };
