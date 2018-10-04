@@ -490,6 +490,7 @@ public:
 
   using IteratorYieldType = decltype(*std::declval<typename Enumerable::template SourceIterator<0>>());
   using CommonType = typename Enumerable::CommonType;
+  using AdjustedCommonType = typename Enumerable::AdjustedCommonType;
   using value_type = std::decay_t<CommonType>;
 
   MultiVisitorSetIterator() {}
@@ -532,8 +533,9 @@ class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<En
 public:
   using Base = MultiVisitorSetIterator<ArgConstness, OperatorType::Union, TFn, TSources...>;
 
-  using ResultType = typename Base::CommonType;
-  using value_type = typename Base::value_type;
+  using CommonType = typename Base::CommonType;
+  using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, CommonType, cinq::utility::SourceType::InternalStorage>;
+  using value_type = typename std::decay_t<ResultType>;
 
   OperatorSpecializedIterator() {}
 
@@ -541,12 +543,12 @@ public:
     : Base(enumerable, is_past_the_end_iteratorator) {
     if (!is_past_the_end_iteratorator && Base::visitor.IsValid()) {
       // push the first element
-      Base::visitor.Visit([this](auto &x) {
+      Base::visitor.Visit([this](auto &&x) {
         bool succeed = false;
         if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          std::tie(current_, succeed) = values_.insert(x);
+          std::tie(current_, succeed) = values_.insert(std::forward<decltype(x)>(x));
         else
-          std::tie(current_, succeed) = values_.insert(static_cast<const value_type &>(x));
+          std::tie(current_, succeed) = values_.insert(static_cast<const value_type &>(std::forward<decltype(x)>(x)));
       });
     }
   }
@@ -575,11 +577,11 @@ protected:
       if (!Base::visitor.MoveToNext(Base::enumerable_->GetSourceTuple()))
         break;
 
-      Base::visitor.Visit([this, &succeed](auto &x) {
+      Base::visitor.Visit([this, &succeed](auto &&x) {
         if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          std::tie(current_, succeed) = values_.insert(x);
+          std::tie(current_, succeed) = values_.insert(std::forward<decltype(x)>(x));
         else
-          std::tie(current_, succeed) = values_.insert(static_cast<const value_type &>(x));
+          std::tie(current_, succeed) = values_.insert(static_cast<const value_type &>(std::forward<decltype(x)>(x)));
       });
 
       if (succeed)
@@ -600,8 +602,9 @@ class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<En
 public:
   using Base = MultiVisitorSetIterator<ArgConstness, OperatorType::Intersect, TFn, TSources...>;
 
-  using ResultType = typename Base::CommonType;
-  using value_type = typename Base::value_type;
+  using CommonType = typename Base::CommonType;
+  using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, CommonType, cinq::utility::SourceType::InternalStorage>;
+  using value_type = typename std::decay_t<ResultType>;
 
   OperatorSpecializedIterator() {}
 
@@ -609,11 +612,11 @@ public:
     : Base(enumerable, is_past_the_end_iteratorator) {
     if (!is_past_the_end_iteratorator && Base::visitor.IsValid()) {
       // push the first element
-      Base::visitor.Visit([this](auto &x) {
+      Base::visitor.Visit([this](auto &&x) {
         if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          ++values_[x];
+          ++values_[std::forward<decltype(x)>(x)];
         else
-          ++values_[static_cast<const value_type &>(x)];
+          ++values_[static_cast<const value_type &>(std::forward<decltype(x)>(x))];
       });
 
       OperatorSpecializedIterator::FindNextValid();
@@ -645,13 +648,13 @@ protected:
         break;
 
       // TODO : check for rvalue reference
-      Base::visitor.Visit([this, &succeed](auto &x) {
+      Base::visitor.Visit([this, &succeed](auto &&x) {
         // There are different approaches for this part, of which the run-time overhead is unknown,
         // choosed the simplest one.
         if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          succeed = ++values_[x] == sizeof...(TSources);
+          succeed = ++values_[std::forward<decltype(x)>(x)] == sizeof...(TSources);
         else
-          succeed = ++values_[static_cast<const value_type &>(x)] == sizeof...(TSources);
+          succeed = ++values_[static_cast<const value_type &>(std::forward<decltype(x)>(x))] == sizeof...(TSources);
 
         if (succeed)
           current_ = values_.find(x);
@@ -675,8 +678,10 @@ class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<En
 public:
   using Base = MultiVisitorSetIterator<ArgConstness, OperatorType::Concat, TFn, TSources...>;
   
-  using ResultType = typename Base::CommonType;
-  using value_type = typename Base::value_type;
+  using CommonType = typename Base::AdjustedCommonType;
+
+  using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, CommonType, cinq::utility::SourceType::Iterator>;
+  using value_type = typename std::decay_t<ResultType>;
 
   OperatorSpecializedIterator() {}
 
@@ -684,11 +689,11 @@ public:
     : Base(enumerable, is_past_the_end_iteratorator) {}
 
   ResultType operator*() const {
-    return Base::visitor.Visit([](auto &x) -> ResultType {
+    return Base::visitor.Visit([](auto &&x) -> ResultType {
         if constexpr (std::is_convertible_v<decltype(x), ResultType>)
-          return x;
+          return std::forward<decltype(x)>(x);
         else
-          return static_cast<ResultType>(x);
+          return static_cast<ResultType>(std::forward<decltype(x)>(x));
       });
   }
 

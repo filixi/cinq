@@ -3,6 +3,7 @@
 
 #include <cassert>
 
+#include <any>
 #include <deque>
 #include <forward_list>
 #include <iostream>
@@ -12,12 +13,16 @@
 #include <vector>
 #include <numeric>
 #include <string>
+#include <functional>
 
 #include "cinq-v3.h"
 using cinq_v3::Cinq;
 
+#include "value-category-test.h"
+
 #define ENABLE_TEST
 
+//
 // Unit test for semantics
 //  - const reference guarante (if applies)
 //  - move semantic of data source (if applies)
@@ -70,15 +75,18 @@ using cinq_v3::Cinq;
 //  For type of deferencing iterator
 //    - if the result is stored in cinq's internal storage (such as set operation and Sort, except SelectMany), const lvalue
 //    - if the result is from function object or iterator, no change
-//    Note: If the result is from multiple sources, std::common_type_t<Sources...> is used.
+//    Note: Constness of prvalue will be removed.
+//    Note: If the result is from multiple sources, if they all yield same reference to same cv type, this reference will be used,
+//      otherwise, std::common_type will be used.
 //    Note: cinq's internal storage should alise the element in origin source when possible.
 //  For function object's parameter
-//    - if source yields cv-prvalue, cv-xvalue
-//    - otherwise, no change
+//    - if source yields cv-lvalue, cv-lvalue
+//    - otherwise, cv-xvalue
 // In const version:
 //  For type of deferencing iterator
 //    - if the source yields xvalue or prvalue, no change
 //    - otherwise, const lvalue
+//    Note: Constness of prvalue will be removed.
 //  For function object's parameter
 //    - if source yields cv-rvalue, cv-xvalue
 //    - otherwise, const lvalue
@@ -90,6 +98,7 @@ using cinq_v3::Cinq;
 // .Trans()
 //
 //
+// Requirement on predicate and container.
 
 #ifdef ENABLE_TEST
 const std::vector<int> empty_source;
@@ -138,7 +147,10 @@ void TestCinqInitialization() {
 }
 
 void TestCinqValueCategory() {
+  // run-time test
+  cinq_test::ValueCategoryTestUnit().Test();
 
+  // compile-time test
 #define CONST_LVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_const_lvalue_reference_v<T>, "const lvalue ref assert failed.")
 #define NON_CONST_LVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_non_const_lvalue_reference_v<T>, "non-const lvalue ref assert failed.")
 #define NON_CONST_RVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_non_const_rvalue_reference_v<T>, "non-const lvalue ref assert failed.")
@@ -152,12 +164,29 @@ void TestCinqValueCategory() {
 #define ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, NON_CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
 #define ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
 
+#define ASSERT_QUERY_ITERATOR_YIELD_CONST_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
+#define ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
+
 #define ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, NON_CONST_NON_REFERENCE_ASSERT, NON_CONST_NON_REFERENCE_ASSERT)}
 #define ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, NON_CONST_NON_REFERENCE_ASSERT, NON_CONST_NON_REFERENCE_ASSERT)}
 
 #define ASSERT_QUERY_ITERATOR_YIELD_CONST_PRVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_NON_REFERENCE_ASSERT, CONST_NON_REFERENCE_ASSERT)}
 #define ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_PRVALUE(qeury) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_NON_REFERENCE_ASSERT, CONST_NON_REFERENCE_ASSERT)}
-  
+
+  // create a list of tester
+
+  // create a list of visitor
+
+  // create a list of source (returning different value category)
+
+  auto x = Cinq(std::vector<std::string>());
+  using CinqType = decltype(x);
+  auto p = &CinqType::Select<std::function<int(std::string)>>;
+
+  // std::cout << typeid(p).name() << std::endl;
+
+  (std::move(x).*p)([](std::string) {return 0;});
+
   // Select
   {
     {
@@ -181,23 +210,23 @@ void TestCinqValueCategory() {
     }
 
     {
-      auto query = Cinq(one_element).Select([](auto &&x) { return std::string(); });
+      auto query = Cinq(one_element).Select([](auto &&) { return std::string(); });
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
 
     {
-      auto query = Cinq(one_element).Const().Select([](auto &&x) { return std::string(); });
+      auto query = Cinq(one_element).Const().Select([](auto &&) { return std::string(); });
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
 
     {
       auto query = Cinq(one_element).Select([](auto &&x) -> const std::string { return std::string(); });
-      ASSERT_QUERY_ITERATOR_YIELD_CONST_PRVALUE(query);
+      ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
 
     {
       auto query = Cinq(one_element).Const().Select([](auto &&x) -> const std::string { return std::string(); });
-      ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_PRVALUE(query);
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
   }
   
@@ -256,27 +285,27 @@ void TestCinqValueCategory() {
     };
 
     {
-      auto query = Cinq(one_element).SelectMany([](auto &&x) { return Conatiner(); });
+      auto query = Cinq(one_element).SelectMany([](auto &&) { return Conatiner(); });
 
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
 
     {
-      auto query = Cinq(one_element).Const().SelectMany([](auto &&x) { return Conatiner(); });
+      auto query = Cinq(one_element).Const().SelectMany([](auto &&) { return Conatiner(); });
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
 
     {
-      auto query = Cinq(one_element).SelectMany([](auto &&x) { return CConatiner(); });
+      auto query = Cinq(one_element).SelectMany([](auto &&) { return CConatiner(); });
 
-      ASSERT_QUERY_ITERATOR_YIELD_CONST_PRVALUE(query)
+      ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
 
     {
-      auto query = Cinq(one_element).Const().SelectMany([](auto &&x) { return CConatiner(); });
+      auto query = Cinq(one_element).Const().SelectMany([](auto &&) { return CConatiner(); });
 
-      ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_PRVALUE(query)
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
   }
 
@@ -284,6 +313,41 @@ void TestCinqValueCategory() {
 
   // Join
   {
+    {
+      std::string s;
+      auto query = Cinq(one_element).Join(one_element, [](auto &&x) -> decltype(auto) {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return std::forward<decltype(x)>(x);
+        }, [](auto &&x) -> decltype(auto) {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return x;
+        }, [&s](auto &&first, auto &&second) mutable -> std::string & {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(first));
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
+          return s;
+        });
+      query.ToVector();
+
+      ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Const().Join(one_element, [](auto &&x) -> decltype(auto) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return std::forward<decltype(x)>(x);
+        }, [](auto &&x) -> decltype(auto) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return x;
+        }, [](auto &&first, auto &&second) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(first));
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
+          return std::tie(first, second);
+        });
+      query.ToVector();
+
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+
     {
       auto query = Cinq(one_element).Join(one_element, [](auto &&x) -> decltype(auto) {
           NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));

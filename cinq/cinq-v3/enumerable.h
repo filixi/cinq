@@ -55,6 +55,10 @@ public:
   using SourceIterator = typename std::tuple_element_t<index, std::tuple<TSources...>>::ResultIterator;
 
   using CommonType = std::common_type_t<decltype(*std::declval<typename TSources::ResultIterator>())...>;
+  using AdjustedCommonType = std::conditional_t<
+    cinq::utility::is_all_reference_to_same_cv_v<decltype(*std::declval<typename TSources::ResultIterator>())...>,
+    std::tuple_element_t<0, std::tuple<decltype(*std::declval<typename TSources::ResultIterator>())...>>,
+    CommonType>;
 
   using IteratorTuple = std::tuple<typename TSources::ResultIterator...>;
 

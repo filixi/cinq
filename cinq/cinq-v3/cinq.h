@@ -195,8 +195,8 @@ auto CinqImpl(std::reference_wrapper<TEnumerable> container) {
     return detail::Cinq<ConstVersion, detail::EnumerableSource<ConstVersion, TEnumerable &>>(container.get());
 }
 
-template <bool ConstVersion, class T>
-auto CinqImpl(detail::EnumerableSource<ConstVersion, T> &&source) {
+template <bool ConstVersion, bool SourceConstVersion, class T>
+auto CinqImpl(detail::EnumerableSource<SourceConstVersion, T> &&source) {
   return CinqImpl<ConstVersion>(MoveSource(std::move(source)));
 }
 
