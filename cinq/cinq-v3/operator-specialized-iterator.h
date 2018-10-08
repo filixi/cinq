@@ -398,6 +398,92 @@ private:
 };
 
 template <bool ArgConstness, class... TSources>
+class RoundRobinIteratorTupleVisitor {
+  template <size_t... index>
+  static auto GetFirst(std::tuple<TSources...> &enumerable, std::index_sequence<index...>) {
+    return std::make_tuple(std::begin(std::get<index>(enumerable))...);
+  }
+
+  template <size_t... index>
+  static auto GetLast(std::tuple<TSources...> &enumerable, std::index_sequence<index...>) {
+    return std::make_tuple(std::end(std::get<index>(enumerable))...);
+  }
+
+public:
+  RoundRobinIteratorTupleVisitor() {}
+
+  RoundRobinIteratorTupleVisitor(std::tuple<TSources...> &enumerable)
+    : first_(GetFirst(enumerable, std::index_sequence_for<TSources...>())),
+      last_(GetLast(enumerable, std::index_sequence_for<TSources...>())){
+    MoveToNext(enumerable);
+  }
+
+  template <class Fn>
+  decltype(auto) Visit(Fn &&fn) {
+    using Ret = std::invoke_result_t<Fn &&, decltype(*std::get<0>(first_))>;
+    return Visitor<sizeof...(TSources)>::template Visit<Ret>([&fn](auto &first, auto &) -> decltype(auto) {
+        return std::invoke(std::forward<Fn>(fn), *first);
+      }, current_enumerable_, first_, last_);
+  }
+
+  bool MoveToNext() noexcept {
+    const size_t start = current_enumerable_ = (current_enumerable_ + 1) % sizeof...(TSources);
+    while (!Visitor<sizeof...(TSources)>::template Visit<bool>([this](auto &first, auto &last) -> bool {
+        return first != last && (!is_touched_[current_enumerable_] || ++first != last);
+      }, current_enumerable_, first_, last_)) {
+      current_enumerable_ = (current_enumerable_ + 1) % sizeof...(TSources);
+      if (current_enumerable_ == start)
+        return is_dereferenceable_ = false;
+    }
+
+    is_dereferenceable_ = true;
+    is_touched_[current_enumerable_] = true;
+    return true;
+  }
+
+  bool MoveToNext(std::tuple<TSources...> &) noexcept {
+    return MoveToNext();
+  }
+
+  bool IsValid() const {
+    return is_dereferenceable_;
+  }
+
+  friend bool operator==(const RoundRobinIteratorTupleVisitor &lhs, const RoundRobinIteratorTupleVisitor &rhs) {
+    return lhs.current_enumerable_ == rhs.current_enumerable_ &&
+      lhs.is_dereferenceable_ == rhs.is_dereferenceable_ &&
+      lhs.first_ == rhs.first_;
+  }
+
+private:
+  template <size_t depth>
+  struct Visitor {
+    template <class Ret, class Fn>
+    static Ret Visit(Fn &&fn, size_t target, std::tuple<typename TSources::ResultIterator...> &first, std::tuple<typename TSources::ResultIterator...> &last)  {
+      if (depth - 1 == target)
+        return std::invoke(std::forward<Fn>(fn), std::get<depth - 1>(first), std::get<depth - 1>(last));
+      return Visitor<depth - 1>::template Visit<Ret>(std::forward<Fn>(fn), target, first, last);
+    }
+  };
+
+  template <>
+  struct Visitor<0> {
+    template <class Ret, class Fn>
+    static Ret Visit(Fn &&, size_t, std::tuple<typename TSources::ResultIterator...> &, std::tuple<typename TSources::ResultIterator...> &) {
+      throw std::runtime_error("Round robin visitor internal failure");
+      // return std::invoke(std::forward<Fn>(fn), std::get<0>(first), std::get<0>(last));
+    }
+  };
+
+  std::tuple<typename TSources::ResultIterator...> first_;
+  std::tuple<typename TSources::ResultIterator...> last_;
+  bool is_touched_[sizeof...(TSources)] = {0};
+  size_t current_enumerable_ = 0;
+
+  bool is_dereferenceable_ = false;
+};
+
+template <bool ArgConstness, class... TSources>
 class IteratorTupleVisitor {
   template <size_t depth = sizeof...(TSources)>
   struct EmplaceIteratorWrapper {
@@ -481,7 +567,7 @@ private:
   bool is_dereferenceable_ = false;
 };
 
-template <bool ArgConstness, OperatorType Operator, class TFn, class... TSources>
+template <template <bool, class...> class InternalVisitor, bool ArgConstness, OperatorType Operator, class TFn, class... TSources>
 class MultiVisitorSetIterator {
 public:
   static_assert(sizeof...(TSources) > 1);
@@ -491,6 +577,7 @@ public:
   using IteratorYieldType = decltype(*std::declval<typename Enumerable::template SourceIterator<0>>());
   using CommonType = typename Enumerable::CommonType;
   using AdjustedCommonType = typename Enumerable::AdjustedCommonType;
+  static constexpr bool is_all_reference_to_same_cv = Enumerable::is_all_reference_to_same_cv;
   using value_type = std::decay_t<CommonType>;
 
   MultiVisitorSetIterator() {}
@@ -524,16 +611,16 @@ protected:
 
   bool is_past_the_end_iteratorator_ = true;
 
-  IteratorTupleVisitor<ArgConstness, TSources...> visitor = is_past_the_end_iteratorator_ ? IteratorTupleVisitor<ArgConstness, TSources...>{} : enumerable_->GetSourceTuple();
+  InternalVisitor<ArgConstness, TSources...> visitor = is_past_the_end_iteratorator_ ? InternalVisitor<ArgConstness, TSources...>{} : enumerable_->GetSourceTuple();
 };
 
 template <bool ArgConstness, bool RetConstness, class TFn, class... TSources>
 class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<EnumerableCategory::SetOperation, OperatorType::Union, TFn, TSources...>>
-  : public MultiVisitorSetIterator<ArgConstness, OperatorType::Union, TFn, TSources...> {
+  : public MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, ArgConstness, OperatorType::Union, TFn, TSources...> {
 public:
-  using Base = MultiVisitorSetIterator<ArgConstness, OperatorType::Union, TFn, TSources...>;
+  using Base = MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, ArgConstness, OperatorType::Union, TFn, TSources...>;
 
-  using CommonType = typename Base::CommonType;
+  using CommonType = typename Base::AdjustedCommonType;
   using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, CommonType, cinq::utility::SourceType::InternalStorage>;
   using value_type = typename std::decay_t<ResultType>;
 
@@ -589,8 +676,30 @@ protected:
     }
   }
 
-  using SetType = std::conditional_t<cinq::utility::is_hashable_v<value_type>,
-    std::unordered_set<value_type>, std::set<value_type>>;
+  struct ReferenceWrapper {
+    ReferenceWrapper(const value_type &r) : ref_(r) {}
+    operator const value_type &() const { return ref_; }
+    friend bool operator<(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
+      return lhs.ref_ < rhs.ref_;
+    }
+    const value_type &ref_;
+  };
+
+  struct Hasher {
+    template <class T>
+    size_t operator()(const T &x) const {
+      return std::hash<std::decay_t<decltype(x.ref_)>>{}(x);
+    }
+  };
+
+  using InternalStorageType = std::conditional_t<Base::is_all_reference_to_same_cv,
+    ReferenceWrapper,
+    value_type>;
+
+  using SetType = std::conditional_t<cinq::utility::is_hashable_v<InternalStorageType>,
+    std::conditional_t<Base::is_all_reference_to_same_cv,
+      std::unordered_set<InternalStorageType, Hasher>,
+      std::unordered_set<InternalStorageType>>, std::set<InternalStorageType>>;
 
   SetType values_;
   typename SetType::iterator current_;
@@ -598,11 +707,11 @@ protected:
 
 template <bool ArgConstness, bool RetConstness, class TFn, class... TSources>
 class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, TFn, TSources...>>
-  : public MultiVisitorSetIterator<ArgConstness, OperatorType::Intersect, TFn, TSources...> {
+  : public MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, ArgConstness, OperatorType::Intersect, TFn, TSources...> {
 public:
-  using Base = MultiVisitorSetIterator<ArgConstness, OperatorType::Intersect, TFn, TSources...>;
+  using Base = MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, ArgConstness, OperatorType::Intersect, TFn, TSources...>;
 
-  using CommonType = typename Base::CommonType;
+  using CommonType = typename Base::AdjustedCommonType;
   using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, CommonType, cinq::utility::SourceType::InternalStorage>;
   using value_type = typename std::decay_t<ResultType>;
 
@@ -665,8 +774,30 @@ protected:
     }
   }
 
-  using MapType = std::conditional_t<cinq::utility::is_hashable_v<value_type>,
-    std::unordered_map<value_type, size_t>, std::map<value_type, size_t>>;
+  struct ReferenceWrapper {
+    ReferenceWrapper(const value_type &r) : ref_(r) {}
+    operator const value_type &() const { return ref_; }
+    friend bool operator<(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
+      return lhs.ref_ < rhs.ref_;
+    }
+    const value_type &ref_;
+  };
+
+  struct Hasher {
+    template <class T>
+    size_t operator()(const T &x) const {
+      return std::hash<std::decay_t<decltype(x.ref_)>>{}(x);
+    }
+  };
+
+  using InternalStorageType = std::conditional_t<Base::is_all_reference_to_same_cv,
+    ReferenceWrapper,
+    value_type>;
+
+  using MapType = std::conditional_t<cinq::utility::is_hashable_v<InternalStorageType>,
+    std::conditional_t<Base::is_all_reference_to_same_cv,
+      std::unordered_map<InternalStorageType, size_t, Hasher>,
+      std::unordered_map<InternalStorageType, size_t>>, std::map<InternalStorageType, size_t>>;
 
   MapType values_;
   typename MapType::iterator current_;
@@ -674,9 +805,9 @@ protected:
 
 template <bool ArgConstness, bool RetConstness, class TFn, class... TSources>
 class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<EnumerableCategory::SetOperation, OperatorType::Concat, TFn, TSources...>>
-  : public MultiVisitorSetIterator<ArgConstness, OperatorType::Concat, TFn, TSources...> {
+  : public MultiVisitorSetIterator<IteratorTupleVisitor, ArgConstness, OperatorType::Concat, TFn, TSources...> {
 public:
-  using Base = MultiVisitorSetIterator<ArgConstness, OperatorType::Concat, TFn, TSources...>;
+  using Base = MultiVisitorSetIterator<IteratorTupleVisitor, ArgConstness, OperatorType::Concat, TFn, TSources...>;
   
   using CommonType = typename Base::AdjustedCommonType;
 

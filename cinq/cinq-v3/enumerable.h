@@ -55,8 +55,9 @@ public:
   using SourceIterator = typename std::tuple_element_t<index, std::tuple<TSources...>>::ResultIterator;
 
   using CommonType = std::common_type_t<decltype(*std::declval<typename TSources::ResultIterator>())...>;
+  static constexpr bool is_all_reference_to_same_cv = cinq::utility::is_all_reference_to_same_cv_v<decltype(*std::declval<typename TSources::ResultIterator>())...>;
   using AdjustedCommonType = std::conditional_t<
-    cinq::utility::is_all_reference_to_same_cv_v<decltype(*std::declval<typename TSources::ResultIterator>())...>,
+    is_all_reference_to_same_cv,
     std::tuple_element_t<0, std::tuple<decltype(*std::declval<typename TSources::ResultIterator>())...>>,
     CommonType>;
 
@@ -93,8 +94,10 @@ protected:
   friend class OperatorSpecializedIterator<true, false, BasicEnumerable>;
   friend class OperatorSpecializedIterator<false, true, BasicEnumerable>;
   friend class OperatorSpecializedIterator<false, false, BasicEnumerable>;
-  friend class MultiVisitorSetIterator<true, Operator, TFn, TSources...>;
-  friend class MultiVisitorSetIterator<false, Operator, TFn, TSources...>;
+  friend class MultiVisitorSetIterator<IteratorTupleVisitor, true, Operator, TFn, TSources...>;
+  friend class MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, true, Operator, TFn, TSources...>;
+  friend class MultiVisitorSetIterator<IteratorTupleVisitor, false, Operator, TFn, TSources...>;
+  friend class MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, false, Operator, TFn, TSources...>;
 
 public:
   template <class Fn>

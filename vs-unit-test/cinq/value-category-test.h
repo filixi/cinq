@@ -11,6 +11,9 @@
 using cinq_v3::Cinq;
 
 namespace cinq_test {
+
+using VCRetType = std::shared_ptr<int>;
+
 template <class T>
 std::string GetValueCategory() {
   return std::is_lvalue_reference_v<T> ? "lvalue" :
@@ -30,7 +33,7 @@ struct ValueCategoryInfo {
   std::string SourceYieldValueCategory; // prvalue, xvalue, lvalue
 
   std::string ExprOriginal; // FunctionParameter, IteratorRet
-  // when the type is from std::xbegin(query), Const stands for cbegin or c-query, NonConst stands for begin on non const query.
+  // when the type is from std::xbegin(query), Const stands for cbegin, NonConst stands for begin.
   std::string IteartorConstness; // Const, NonConst
   // The following two stores the constness and valuecategory of the testing expr, which is of FunctionParam or dereferencing iterator.
   std::string ExprTypeConstness; // Const, NonConst
@@ -248,39 +251,39 @@ struct ValueCategoryTestUnit {
   template <class Container>
   void TestSelectMany(Container container) {
     using QueryType = decltype(Cinq(container));
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<std::string>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const std::string>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<std::string &>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const std::string &>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<std::string &&>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const std::string &&>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
   
     using ConstQueryType = decltype(Cinq(container).Const());
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<std::string>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const std::string>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<std::string &>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const std::string &>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<std::string &&>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const std::string &&>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
   }
 
   template <class Container>
   void TestSelect(Container container) {
     using QueryType = decltype(Cinq(container));
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<std::string, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const std::string, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<std::string &, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const std::string &, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<std::string &&, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const std::string &&, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
+    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<VCRetType, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
+    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const VCRetType, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
+    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<VCRetType &, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
+    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const VCRetType &, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
+    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<VCRetType &&, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
+    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const VCRetType &&, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
   
     using ConstQueryType = decltype(Cinq(container).Const());
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<std::string, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const std::string, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<std::string &, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const std::string &, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<std::string &&, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const std::string &&, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<VCRetType, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const VCRetType, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<VCRetType &, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const VCRetType &, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<VCRetType &&, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const VCRetType &&, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
   }
 
   template <class Selector1Ret, class Selector2Ret, class Selector3Ret, bool QueryConstness, class Container, class BasicQuery>
@@ -313,7 +316,7 @@ struct ValueCategoryTestUnit {
           ValueCategoryInfo::FillSourceInfo<Selector2Ret>(info.back(), "FunctionObject");
           return static_cast<Selector3Ret>(ret3);
         });
-    for (auto &&x : query);
+    query.ToVector();
 
     info.push_back(ValueCategoryInfo::CreateExprInfo<decltype(*std::begin(query))>("IteratorRet"));
     info.back().IteartorConstness = "NonConst";
@@ -330,50 +333,50 @@ struct ValueCategoryTestUnit {
 
   template <class Container>
   void TestJoin(Container container) {
-    TestJoinImpl<std::string, std::string, std::string, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, VCRetType, false>(container, Cinq(container));
     // In join, selector is implemented as Cinq::Select. Thus the constness is removed.
-    // TestJoinImpl<const std::string, std::string, std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string &, std::string, std::string, false>(container, Cinq(container));
-    TestJoinImpl<const std::string &, std::string, std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string &&, std::string, std::string, false>(container, Cinq(container));
-    TestJoinImpl<const std::string &&, std::string, std::string, false>(container, Cinq(container));
+    // TestJoinImpl<const VCRetType, VCRetType, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType &, VCRetType, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<const VCRetType &, VCRetType, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType &&, VCRetType, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<const VCRetType &&, VCRetType, VCRetType, false>(container, Cinq(container));
 
-    TestJoinImpl<std::string, std::string, std::string, false>(container, Cinq(container));
-    // TestJoinImpl<std::string, const std::string, std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string, std::string &, std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string, const std::string &, std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string, std::string &&, std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string, const std::string &&, std::string, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, VCRetType, false>(container, Cinq(container));
+    // TestJoinImpl<VCRetType, const VCRetType, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType &, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, const VCRetType &, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType &&, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, const VCRetType &&, VCRetType, false>(container, Cinq(container));
 
-    TestJoinImpl<std::string, std::string, std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string, std::string, const std::string, false>(container, Cinq(container));
-    TestJoinImpl<std::string, std::string, std::string &, false>(container, Cinq(container));
-    TestJoinImpl<std::string, std::string, const std::string &, false>(container, Cinq(container));
-    TestJoinImpl<std::string, std::string, std::string &&, false>(container, Cinq(container));
-    TestJoinImpl<std::string, std::string, const std::string &&, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, const VCRetType, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, VCRetType &, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, const VCRetType &, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, VCRetType &&, false>(container, Cinq(container));
+    TestJoinImpl<VCRetType, VCRetType, const VCRetType &&, false>(container, Cinq(container));
 
 
 
-    TestJoinImpl<std::string, std::string, std::string, true>(container, Cinq(container).Const());
-    // TestJoinImpl<const std::string, std::string, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string &, std::string, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<const std::string &, std::string, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string &&, std::string, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<const std::string &&, std::string, std::string, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    // TestJoinImpl<const VCRetType, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType &, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<const VCRetType &, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType &&, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<const VCRetType &&, VCRetType, VCRetType, true>(container, Cinq(container).Const());
 
-    TestJoinImpl<std::string, std::string, std::string, true>(container, Cinq(container).Const());
-    // TestJoinImpl<std::string, const std::string, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, std::string &, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, const std::string &, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, std::string &&, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, const std::string &&, std::string, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    // TestJoinImpl<VCRetType, const VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType &, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, const VCRetType &, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType &&, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, const VCRetType &&, VCRetType, true>(container, Cinq(container).Const());
 
-    TestJoinImpl<std::string, std::string, std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, std::string, const std::string, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, std::string, std::string &, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, std::string, const std::string &, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, std::string, std::string &&, true>(container, Cinq(container).Const());
-    TestJoinImpl<std::string, std::string, const std::string &&, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, const VCRetType, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, VCRetType &, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, const VCRetType &, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, VCRetType &&, true>(container, Cinq(container).Const());
+    TestJoinImpl<VCRetType, VCRetType, const VCRetType &&, true>(container, Cinq(container).Const());
   }
 
   template <class Container>
@@ -404,12 +407,12 @@ struct ValueCategoryTestUnit {
   }
 
   void Test() {
-    TestBatch(FakeConatiner<std::string>());
-    TestBatch(FakeConatiner<const std::string>());
-    TestBatch(FakeConatiner<std::string &>());
-    TestBatch(FakeConatiner<const std::string &>());
-    TestBatch(FakeConatiner<std::string &&>());
-    TestBatch(FakeConatiner<const std::string &&>());
+    TestBatch(FakeConatiner<VCRetType>());
+    TestBatch(FakeConatiner<const VCRetType>());
+    TestBatch(FakeConatiner<VCRetType &>());
+    TestBatch(FakeConatiner<const VCRetType &>());
+    TestBatch(FakeConatiner<VCRetType &&>());
+    TestBatch(FakeConatiner<const VCRetType &&>());
   }
 };
 
