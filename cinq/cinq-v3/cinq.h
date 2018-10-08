@@ -15,7 +15,7 @@
 
 namespace cinq_v3 {
 namespace detail {
-template <class TEnumerable>
+template <bool ConstVersion, class TEnumerable>
 class Cinq {
 public:
   using ResultIterator = typename TEnumerable::ResultIterator;
@@ -33,39 +33,56 @@ public:
   Cinq &operator=(const Cinq &) = delete;
   Cinq &operator=(Cinq &&) = delete;
 
+  auto begin() {
+    return std::begin(root_);
+  }
+
+  auto end() {
+    return std::end(root_);
+  }
+
   auto begin() const {
-    return std::cbegin(root_);
+    return root_.cbegin();
   }
 
   auto end() const {
-    return std::cend(root_);
+    return root_.cend();
+  }
+
+  auto cbegin() const {
+    return begin();
+  }
+
+  auto cend() const {
+    return end();
   }
 
   template <class Fn>
   auto Select(Fn fn) && {
-    using SelectType = Enumerable<EnumerableCategory::Producer, OperatorType::Select, Fn, TEnumerable>;
-    return Cinq<SelectType>(std::move(fn), std::move(root_));
+    using SelectType = Enumerable<ConstVersion, EnumerableCategory::Producer, OperatorType::Select, Fn, TEnumerable>;
+    return Cinq<ConstVersion, SelectType>(std::move(fn), std::move(root_));
   }
 
   template <class Fn>
   auto SelectMany(Fn fn) && {
-    using SelectManyType = Enumerable<EnumerableCategory::Producer, OperatorType::SelectMany, Fn, TEnumerable>;
-    return Cinq<SelectManyType>(std::move(fn), std::move(root_));
+    using SelectManyType = Enumerable<ConstVersion, EnumerableCategory::Producer, OperatorType::SelectMany, Fn, TEnumerable>;
+    return Cinq<ConstVersion, SelectManyType>(std::move(fn), std::move(root_));
   }
 
   template <class Fn>
   auto Where(Fn fn) && {
-    using WhereType = Enumerable<EnumerableCategory::Subrange, OperatorType::Where, Fn, TEnumerable>;
-    return Cinq<WhereType>(std::move(fn), std::move(root_));
+    using WhereType = Enumerable<ConstVersion, EnumerableCategory::Subrange, OperatorType::Where, Fn, TEnumerable>;
+    return Cinq<ConstVersion, WhereType>(std::move(fn), std::move(root_));
   }
 
   template <class Inner, class OuterKeySelector, class InnerKeySelector, class ResultSelector>
   auto Join(Inner &&inner, OuterKeySelector outer_key_selector, InnerKeySelector inner_key_selector, ResultSelector result_selector) && {
-    using OuterSelectType = Enumerable<EnumerableCategory::Producer, OperatorType::Select, OuterKeySelector, TEnumerable>;
-    auto inner_select = cinq_v3::Cinq(std::forward<Inner>(inner)).Select(std::move(inner_key_selector));
+    using OuterSelectType = Enumerable<ConstVersion, EnumerableCategory::Producer, OperatorType::Select, OuterKeySelector, TEnumerable>;
+    
+    auto inner_select = ImplDetail::CinqImpl<ConstVersion>(std::forward<Inner>(inner)).Select(std::move(inner_key_selector));
 
-    using JoinType = Enumerable<EnumerableCategory::Producer, OperatorType::Join, ResultSelector, OuterSelectType, decltype(inner_select)>;
-    return Cinq<JoinType>(
+    using JoinType = Enumerable<ConstVersion, EnumerableCategory::Producer, OperatorType::Join, ResultSelector, OuterSelectType, decltype(inner_select)>;
+    return Cinq<ConstVersion, JoinType>(
         std::move(result_selector),
         OuterSelectType(std::move(outer_key_selector), std::move(root_)),
         std::move(inner_select)
@@ -74,47 +91,47 @@ public:
 
   template <class Source, class... Rest>
   auto Intersect(Source &&source, Rest&&... rest) && {
-    auto self = cinq_v3::Cinq(std::move(root_)).Distinct();
+    auto self = ImplDetail::CinqImpl<ConstVersion>(std::move(root_)).Distinct();
 
-    using IntersectType = Enumerable<EnumerableCategory::SetOperation, OperatorType::Intersect, bool,
+    using IntersectType = Enumerable<ConstVersion, EnumerableCategory::SetOperation, OperatorType::Intersect, bool,
       decltype(self),
-      decltype(cinq_v3::Cinq(std::forward<Source>(source)).Distinct()),
-      decltype(cinq_v3::Cinq(std::forward<Rest>(rest)).Distinct())...>;
+      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
+      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...>;
 
-    return Cinq<IntersectType>(
+    return Cinq<ConstVersion, IntersectType>(
         false,
         GetEnumerable(std::move(self)),
-        GetEnumerable(cinq_v3::Cinq(std::forward<Source>(source)).Distinct()),
-        GetEnumerable(cinq_v3::Cinq(std::forward<Rest>(rest)).Distinct())...
+        GetEnumerable(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
+        GetEnumerable(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...
       );
   }
 
   template <class Source, class... Rest>
   auto Union(Source &&source, Rest&&... rest) && {
-    auto self = cinq_v3::Cinq(std::move(root_)).Distinct();
+    auto self = ImplDetail::CinqImpl<ConstVersion>(std::move(root_)).Distinct();
 
-    using UnionType = Enumerable<EnumerableCategory::SetOperation, OperatorType::Union, bool,
+    using UnionType = Enumerable<ConstVersion, EnumerableCategory::SetOperation, OperatorType::Union, bool,
       decltype(self),
-      decltype(cinq_v3::Cinq(std::forward<Source>(source)).Distinct()),
-      decltype(cinq_v3::Cinq(std::forward<Rest>(rest)).Distinct())...>;
+      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
+      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...>;
 
-    return Cinq<UnionType>(
+    return Cinq<ConstVersion, UnionType>(
         false,
         GetEnumerable(std::move(self)),
-        GetEnumerable(cinq_v3::Cinq(std::forward<Source>(source)).Distinct()),
-        GetEnumerable(cinq_v3::Cinq(std::forward<Rest>(rest)).Distinct())...
+        GetEnumerable(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
+        GetEnumerable(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...
       );
   }
 
   template <class Source, class... Rest>
   auto Concat(Source &&sources, Rest&&... rest) && {
-    using ConcatType = Enumerable<EnumerableCategory::SetOperation, OperatorType::Concat, bool, TEnumerable, 
-      decltype(cinq_v3::Cinq(std::forward<Source>(sources))), decltype(cinq_v3::Cinq(std::forward<Rest>(rest)))...>;
-    return Cinq<ConcatType>(
+    using ConcatType = Enumerable<ConstVersion, EnumerableCategory::SetOperation, OperatorType::Concat, bool, TEnumerable, 
+      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(sources))), decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)))...>;
+    return Cinq<ConstVersion, ConcatType>(
         false,
         std::move(root_),
-        GetEnumerable(cinq_v3::Cinq(std::forward<Source>(sources))),
-        GetEnumerable(cinq_v3::Cinq(std::forward<Rest>(rest)))...
+        GetEnumerable(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(sources))),
+        GetEnumerable(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)))...
       );
   }
 
@@ -127,14 +144,18 @@ public:
       mutable std::set<value_type> distinct_set_;
     };
 
-    using WhereType = Enumerable<EnumerableCategory::Subrange, OperatorType::Where, DistinctHelper, TEnumerable>;
-    return Cinq<WhereType>(DistinctHelper(), std::move(root_));
+    using WhereType = Enumerable<ConstVersion, EnumerableCategory::Subrange, OperatorType::Where, DistinctHelper, TEnumerable>;
+    return Cinq<ConstVersion, WhereType>(DistinctHelper(), std::move(root_));
   }
  
   auto ToVector() {
-    using value_type = std::decay_t<typename std::decay_t<decltype(std::cbegin(*this))>::value_type>;
-    auto vtr = std::vector<value_type>(std::cbegin(*this), std::cend(*this));
+    using value_type = std::decay_t<typename std::decay_t<decltype(std::begin(*this))>::value_type>;
+    auto vtr = std::vector<value_type>(std::begin(*this), std::end(*this));
     return vtr;
+  }
+
+  auto Const() && {
+    return Cinq<true, TEnumerable>(std::move(root_));
   }
 
 private:
@@ -142,10 +163,44 @@ private:
     return std::move(c.root_);
   }
 
-  TEnumerable root_;
+  mutable TEnumerable root_;
 };
 
 } // namespace detail
+
+namespace ImplDetail {
+template <bool ConstVersion, class TEnumerable>
+decltype(auto) CinqImpl(TEnumerable &&container) {
+  if constexpr (detail::is_cinq_v<std::decay_t<TEnumerable>>)
+    return std::forward<TEnumerable &&>(container);
+  else
+    return detail::Cinq<ConstVersion, detail::EnumerableSource<ConstVersion, std::decay_t<TEnumerable>>>(std::forward<TEnumerable>(container));
+}
+
+template <bool ConstVersion, class T, size_t size>
+auto CinqImpl(T (&container)[size]) {
+  return detail::Cinq<ConstVersion, detail::EnumerableSource<ConstVersion, std::array<T, size>>>(container, std::make_index_sequence<size>());
+}
+
+template <bool ConstVersion, class T, size_t size>
+auto CinqImpl(const T (&container)[size]) {
+  return detail::Cinq<ConstVersion, detail::EnumerableSource<ConstVersion, std::array<T, size>>>(container, std::make_index_sequence<size>());
+}
+
+template <bool ConstVersion, class TEnumerable>
+auto CinqImpl(std::reference_wrapper<TEnumerable> container) {
+  if constexpr (std::is_const_v<TEnumerable>)
+    return detail::Cinq<ConstVersion, detail::EnumerableSource<true, TEnumerable &>>(container.get());
+  else
+    return detail::Cinq<ConstVersion, detail::EnumerableSource<ConstVersion, TEnumerable &>>(container.get());
+}
+
+template <bool ConstVersion, bool SourceConstVersion, class T>
+auto CinqImpl(detail::EnumerableSource<SourceConstVersion, T> &&source) {
+  return CinqImpl<ConstVersion>(MoveSource(std::move(source)));
+}
+
+} // namespace ImplDetail
 
 // Following function/function template overload set is the front barrier to maintain inner type consistency from user provided types.
 // Such consistency will greatly reduce both compile-time and run-time errors by simplifing the inner type design.
@@ -163,30 +218,17 @@ private:
 
 template <class TEnumerable>
 decltype(auto) Cinq(TEnumerable &&container) {
-  if constexpr (detail::is_cinq_v<std::decay_t<TEnumerable>>)
-    return std::forward<TEnumerable &&>(container);
-  else
-    return detail::Cinq<detail::EnumerableSource<std::decay_t<TEnumerable>>>(std::forward<TEnumerable>(container));
+  return ImplDetail::CinqImpl<false>(std::forward<TEnumerable>(container));
 }
 
 template <class T, size_t size>
 auto Cinq(T (&container)[size]) {
-  return detail::Cinq<detail::EnumerableSource<std::array<T, size>>>(container, std::make_index_sequence<size>());
+  return ImplDetail::CinqImpl<false>(container);
 }
 
 template <class T, size_t size>
 auto Cinq(const T (&container)[size]) {
-  return detail::Cinq<detail::EnumerableSource<std::array<T, size>>>(container, std::make_index_sequence<size>());
-}
-
-template <class TEnumerable>
-auto Cinq(std::reference_wrapper<TEnumerable> container) {
-  return detail::Cinq<detail::EnumerableSource<TEnumerable &>>(container.get());
-}
-
-template <class T>
-auto Cinq(detail::EnumerableSource<T> &&source) {
-  return Cinq(MoveSource(std::move(source)));
+  return ImplDetail::CinqImpl<false>(container);
 }
 
 } // namespace cinq_v3

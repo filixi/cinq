@@ -47,5 +47,8 @@
     <ClInclude Include="..\..\cinq\cinq-v3\cinq.h">
       <Filter>cinq-v3</Filter>
     </ClInclude>
+    <ClInclude Include="value-category-test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
