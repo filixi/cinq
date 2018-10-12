@@ -30,6 +30,7 @@
     <ClInclude Include="..\..\cinq\cinq-v3\operator-specialized-iterator.h" />
     <ClInclude Include="..\..\cinq\utility.h" />
     <ClInclude Include="..\..\include\cinq-v3.h" />
+    <ClInclude Include="cinq-test.h" />
     <ClInclude Include="value-category-test.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

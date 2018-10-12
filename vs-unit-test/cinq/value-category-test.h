@@ -203,17 +203,9 @@ struct ValueCategoryTestUnit {
     auto last = local_info.empty() ? ValueCategoryInfo{} : local_info.back();
     local_info.push_back(ValueCategoryInfo::CreateExprInfo<IteratorYieldType>("IteratorRet"));
     local_info.back().IteartorConstness = "NonConst";
-    if (last.YieldConstness != "") { // When iterator yield type is from function object
-      local_info.back().SourceYieldConstness = last.YieldConstness;
-      local_info.back().SourceYieldValueCategory = last.YieldValueCategory;
-    }
 
     local_info.push_back(ValueCategoryInfo::CreateExprInfo<ConstIteratorYieldType>("IteratorRet"));
     local_info.back().IteartorConstness = "Const";
-    if (last.YieldConstness != "") { // When iterator yield type is from function object
-      local_info.back().SourceYieldConstness = last.YieldConstness;
-      local_info.back().SourceYieldValueCategory = last.YieldValueCategory;
-    }
 
     for (auto i : {local_info.rbegin(), std::next(local_info.rbegin())}) {
       i->QueryConstness = query_constness;
@@ -221,6 +213,9 @@ struct ValueCategoryTestUnit {
       if (last.YieldConstness == "") { // When iterator yield type is from base_query
         i->SourceYieldConstness = GetConstness<SourceYieldType>();
         i->SourceYieldValueCategory = GetValueCategory<SourceYieldType>();
+      } else { // When iterator yield type is from function object
+        i->SourceYieldConstness = last.YieldConstness;
+        i->SourceYieldValueCategory = last.YieldValueCategory;
       }
     }
 
@@ -372,6 +367,7 @@ struct ValueCategoryTestUnit {
     TestJoinImpl<VCRetType, const VCRetType &&, VCRetType, true>(container, Cinq(container).Const());
 
     TestJoinImpl<VCRetType, VCRetType, VCRetType, true>(container, Cinq(container).Const());
+    // The last selector isn't implemented with Select.
     TestJoinImpl<VCRetType, VCRetType, const VCRetType, true>(container, Cinq(container).Const());
     TestJoinImpl<VCRetType, VCRetType, VCRetType &, true>(container, Cinq(container).Const());
     TestJoinImpl<VCRetType, VCRetType, const VCRetType &, true>(container, Cinq(container).Const());

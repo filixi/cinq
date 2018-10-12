@@ -50,5 +50,8 @@
     <ClInclude Include="value-category-test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cinq-test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

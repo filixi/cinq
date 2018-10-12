@@ -9,6 +9,7 @@
 #endif
 
 #include <array>
+#include <vector>
 
 #include "enumerable.h"
 #include "enumerable-source.h"
@@ -19,6 +20,7 @@ template <bool ConstVersion, class TEnumerable>
 class Cinq {
 public:
   using ResultIterator = typename TEnumerable::ResultIterator;
+  static_assert(!std::is_reference_v<TEnumerable>);
 
   template <class T, size_t... indexs>
   Cinq(T &container, std::index_sequence<indexs...>)
@@ -95,8 +97,8 @@ public:
 
     using IntersectType = Enumerable<ConstVersion, EnumerableCategory::SetOperation, OperatorType::Intersect, bool,
       decltype(self),
-      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
-      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...>;
+      std::remove_reference_t<decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct())>,
+      std::remove_reference_t<decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())>...>;
 
     return Cinq<ConstVersion, IntersectType>(
         false,
@@ -112,8 +114,8 @@ public:
 
     using UnionType = Enumerable<ConstVersion, EnumerableCategory::SetOperation, OperatorType::Union, bool,
       decltype(self),
-      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
-      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...>;
+      std::remove_reference_t<decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct())>,
+      std::remove_reference_t<decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())>...>;
 
     return Cinq<ConstVersion, UnionType>(
         false,
@@ -126,7 +128,8 @@ public:
   template <class Source, class... Rest>
   auto Concat(Source &&sources, Rest&&... rest) && {
     using ConcatType = Enumerable<ConstVersion, EnumerableCategory::SetOperation, OperatorType::Concat, bool, TEnumerable, 
-      decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(sources))), decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)))...>;
+      std::remove_reference_t<decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Source>(sources)))>,
+      std::remove_reference_t<decltype(ImplDetail::CinqImpl<ConstVersion>(std::forward<Rest>(rest)))>...>;
     return Cinq<ConstVersion, ConcatType>(
         false,
         std::move(root_),
@@ -136,12 +139,22 @@ public:
   }
 
   auto Distinct() && {
-    using value_type = std::decay_t<decltype(*std::declval<ResultIterator>())>;
+    // TODO : use ReferenceWrapper when possible
+    using ResultType = decltype(*std::declval<ResultIterator>());
+    using value_type = std::decay_t<ResultType>;
     class DistinctHelper {
+      using InternalStorageType = std::conditional_t<std::is_reference_v<ResultType>,
+        cinq::utility::ReferenceWrapper<value_type>,
+        value_type>;
+
     public:
-      bool operator()(const value_type &t) const { return distinct_set_.insert(t).second; };
+      bool operator()(const InternalStorageType &t) const { return distinct_set_.insert(t).second; };
+
     private:
-      mutable std::set<value_type> distinct_set_;
+      using SetType = std::conditional_t<cinq::utility::ReferenceWrapper<value_type>::hash_version,
+        std::unordered_set<InternalStorageType>,std::set<InternalStorageType>>;
+
+      mutable SetType distinct_set_;
     };
 
     using WhereType = Enumerable<ConstVersion, EnumerableCategory::Subrange, OperatorType::Where, DistinctHelper, TEnumerable>;
@@ -152,6 +165,12 @@ public:
     using value_type = std::decay_t<typename std::decay_t<decltype(std::begin(*this))>::value_type>;
     auto vtr = std::vector<value_type>(std::begin(*this), std::end(*this));
     return vtr;
+  }
+
+  auto ToSet() {
+    using value_type = std::decay_t<typename std::decay_t<decltype(std::begin(*this))>::value_type>;
+    auto set = std::set<value_type>(std::begin(*this), std::end(*this));
+    return set;
   }
 
   auto Const() && {
@@ -229,6 +248,11 @@ auto Cinq(T (&container)[size]) {
 template <class T, size_t size>
 auto Cinq(const T (&container)[size]) {
   return ImplDetail::CinqImpl<false>(container);
+}
+
+template <class T>
+auto Cinq() {
+  return ImplDetail::CinqImpl<false>(std::vector<std::decay_t<T>>{});
 }
 
 } // namespace cinq_v3

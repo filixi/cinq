@@ -22,11 +22,16 @@ template <class T>
 inline constexpr bool is_non_const_rvalue_reference_v = !std::is_const_v<std::remove_reference_t<T>> && std::is_rvalue_reference_v<T>;
 
 template <class T>
-struct remove_smart_ptr : std::false_type { using type = T; };
+struct remove_smart_ptr_impl : std::false_type { using type = T; };
 template <class T>
-struct remove_smart_ptr<std::shared_ptr<T>> : std::true_type { using type = T; };
+struct remove_smart_ptr_impl<std::shared_ptr<T>> : std::true_type { using type = T; };
 template <class T>
-struct remove_smart_ptr<std::unique_ptr<T>> : std::true_type { using type = T; };
+struct remove_smart_ptr_impl<std::unique_ptr<T>> : std::true_type { using type = T; };
+template <class T>
+struct remove_smart_ptr : remove_smart_ptr_impl<std::decay_t<T>> {
+  using type = std::conditional_t<remove_smart_ptr_impl<std::decay_t<T>>::value,
+    typename remove_smart_ptr_impl<std::decay_t<T>>::type, T>;
+};
 template <class T>
 using remove_smart_ptr_t = typename remove_smart_ptr<T>::type;
 template <class T>
@@ -47,9 +52,9 @@ template <class Fn, class... Args>
 inline constexpr bool is_callable_v = is_callable<Fn, Args...>(nullptr);
 
 template <class T, class = void>
-struct is_hashable : std::true_type {};
+struct is_hashable : std::false_type {};
 template <class T>
-struct is_hashable<T, std::void_t<std::hash<T>>> : std::false_type {};
+struct is_hashable<T, std::void_t<std::hash<T>>> : std::true_type {};
 template <class T>
 inline constexpr bool is_hashable_v = is_hashable<T>::value;
 
@@ -125,6 +130,79 @@ struct is_all_reference_to_same_cv : std::conditional_t<
 template <class... Args>
 inline constexpr bool is_all_reference_to_same_cv_v = is_all_reference_to_same_cv<Args...>::value;
 
+template <class... Args>
+struct is_all_reference_to_same : std::conjunction<is_all_same<std::decay_t<Args>...>, std::is_reference<Args>...> {};
+template <class... Args>
+inline constexpr bool is_all_reference_to_same_v = is_all_reference_to_same<Args...>::value;
+
+template <class T, class = void>
+struct is_less_than_comparable : std::false_type {};
+template <class T>
+struct is_less_than_comparable<T,
+  std::void_t<decltype(std::declval<const std::decay_t<T> &>() < std::declval<const std::decay_t<T> &>())>> : std::true_type {};
+template <class T>
+inline constexpr bool is_less_than_comparable_v = is_less_than_comparable<T>::value;
+
+template <class T, class = void>
+struct is_equal_comparable : std::false_type {};
+template <class T>
+struct is_equal_comparable<T,
+  std::void_t<decltype(std::declval<const std::decay_t<T> &>() == std::declval<const std::decay_t<T> &>())>> : std::true_type {};
+template <class T>
+inline constexpr bool is_equal_comparable_v = is_equal_comparable<T>::value;
+
+template <class T, class = void>
+struct ReferenceWrapper {
+  static_assert((std::void_t<T> *)nullptr, "T must be less than comparable, or hashable and equal comparable.");
+};
+
+template <class T>
+struct ReferenceWrapper<T, std::enable_if_t<!(is_hashable_v<T> && is_equal_comparable_v<T>) && is_less_than_comparable_v<T>, void>> {
+  static_assert(!std::is_reference_v<T>, "T must not be reference.");
+  static constexpr bool hash_version = false;
+
+  ReferenceWrapper(const T &t) : ref_(t) {}
+
+  friend decltype(auto) operator<(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
+    return lhs.ref_ < rhs.ref_;
+  }
+
+  operator const T &() const {
+    return ref_;
+  }
+
+  const T &ref_;
+};
+
+template <class T>
+struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_comparable_v<T>, void>> {
+  static_assert(!std::is_reference_v<T>, "T must not be reference.");
+  static constexpr bool hash_version = true;
+
+  ReferenceWrapper(const T &t) : ref_(t) {}
+
+  friend decltype(auto) operator==(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
+    return lhs.ref_ == rhs.ref_;
+  }
+
+  operator const T &() const {
+    return ref_;
+  }
+
+  const T &ref_;
+};
+
 } // namespace utility
 
 } // namespace cinq
+
+namespace std {
+template <class T>
+struct hash<cinq::utility::ReferenceWrapper<T>> {
+  size_t operator()(const T &t) const {
+    return static_cast<size_t>(h_(t));
+  }
+  std::hash<std::decay_t<T>> h_;
+};
+
+} // namespace std

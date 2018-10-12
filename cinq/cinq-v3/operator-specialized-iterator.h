@@ -234,7 +234,7 @@ public:
   }
 
   friend bool operator==(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
-    return lhs.iterator_ != rhs.iterator_;
+    return lhs.iterator_ == rhs.iterator_;
   }
 
   OperatorSpecializedIterator &operator++() {
@@ -577,7 +577,7 @@ public:
   using IteratorYieldType = decltype(*std::declval<typename Enumerable::template SourceIterator<0>>());
   using CommonType = typename Enumerable::CommonType;
   using AdjustedCommonType = typename Enumerable::AdjustedCommonType;
-  static constexpr bool is_all_reference_to_same_cv = Enumerable::is_all_reference_to_same_cv;
+  static constexpr bool is_all_reference_to_same = Enumerable::is_all_reference_to_same;
   using value_type = std::decay_t<CommonType>;
 
   MultiVisitorSetIterator() {}
@@ -676,30 +676,11 @@ protected:
     }
   }
 
-  struct ReferenceWrapper {
-    ReferenceWrapper(const value_type &r) : ref_(r) {}
-    operator const value_type &() const { return ref_; }
-    friend bool operator<(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
-      return lhs.ref_ < rhs.ref_;
-    }
-    const value_type &ref_;
-  };
+  using InternalStorageType = std::conditional_t<Base::is_all_reference_to_same,
+    cinq::utility::ReferenceWrapper<value_type>, value_type>;
 
-  struct Hasher {
-    template <class T>
-    size_t operator()(const T &x) const {
-      return std::hash<std::decay_t<decltype(x.ref_)>>{}(x);
-    }
-  };
-
-  using InternalStorageType = std::conditional_t<Base::is_all_reference_to_same_cv,
-    ReferenceWrapper,
-    value_type>;
-
-  using SetType = std::conditional_t<cinq::utility::is_hashable_v<InternalStorageType>,
-    std::conditional_t<Base::is_all_reference_to_same_cv,
-      std::unordered_set<InternalStorageType, Hasher>,
-      std::unordered_set<InternalStorageType>>, std::set<InternalStorageType>>;
+  using SetType = std::conditional_t< cinq::utility::ReferenceWrapper<value_type>::hash_version,
+    std::unordered_set<InternalStorageType>, std::set<InternalStorageType>>;
 
   SetType values_;
   typename SetType::iterator current_;
@@ -756,10 +737,7 @@ protected:
       if (!Base::visitor.MoveToNext(Base::enumerable_->GetSourceTuple()))
         break;
 
-      // TODO : check for rvalue reference
       Base::visitor.Visit([this, &succeed](auto &&x) {
-        // There are different approaches for this part, of which the run-time overhead is unknown,
-        // choosed the simplest one.
         if constexpr (std::is_convertible_v<decltype(x), value_type>)
           succeed = ++values_[std::forward<decltype(x)>(x)] == sizeof...(TSources);
         else
@@ -774,30 +752,11 @@ protected:
     }
   }
 
-  struct ReferenceWrapper {
-    ReferenceWrapper(const value_type &r) : ref_(r) {}
-    operator const value_type &() const { return ref_; }
-    friend bool operator<(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
-      return lhs.ref_ < rhs.ref_;
-    }
-    const value_type &ref_;
-  };
+  using InternalStorageType = std::conditional_t<Base::is_all_reference_to_same,
+    cinq::utility::ReferenceWrapper<value_type>, value_type>;
 
-  struct Hasher {
-    template <class T>
-    size_t operator()(const T &x) const {
-      return std::hash<std::decay_t<decltype(x.ref_)>>{}(x);
-    }
-  };
-
-  using InternalStorageType = std::conditional_t<Base::is_all_reference_to_same_cv,
-    ReferenceWrapper,
-    value_type>;
-
-  using MapType = std::conditional_t<cinq::utility::is_hashable_v<InternalStorageType>,
-    std::conditional_t<Base::is_all_reference_to_same_cv,
-      std::unordered_map<InternalStorageType, size_t, Hasher>,
-      std::unordered_map<InternalStorageType, size_t>>, std::map<InternalStorageType, size_t>>;
+  using MapType = std::conditional_t<cinq::utility::ReferenceWrapper<value_type>::hash_version,
+    std::unordered_map<InternalStorageType, size_t>, std::map<InternalStorageType, size_t>>;
 
   MapType values_;
   typename MapType::iterator current_;
