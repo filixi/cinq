@@ -1,5 +1,4 @@
-#pragma once
-
+#include <any>
 #include <iostream>
 #include <iterator>
 #include <utility>
@@ -11,6 +10,10 @@
 using cinq_v3::Cinq;
 
 namespace cinq_test {
+
+const std::vector<int> empty_source;
+const std::vector<int> one_element{ 0 };
+const std::vector<int> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
 
 using VCRetType = std::shared_ptr<int>;
 
@@ -411,5 +414,247 @@ struct ValueCategoryTestUnit {
     TestBatch(FakeConatiner<const VCRetType &&>());
   }
 };
+
+void RuntimeValueCategoryTest() {
+  ValueCategoryTestUnit().Test();
+}
+
+void CompileTimeValueCategoryTest() {
+  // run-time test
+  cinq_test::RuntimeValueCategoryTest();
+
+  // compile-time test
+#define CONST_LVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_const_lvalue_reference_v<T>, "const lvalue ref assert failed.")
+#define NON_CONST_LVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_non_const_lvalue_reference_v<T>, "non-const lvalue ref assert failed.")
+#define NON_CONST_RVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_non_const_rvalue_reference_v<T>, "non-const lvalue ref assert failed.")
+#define CONST_NON_REFERENCE_ASSERT(T) static_assert(!std::is_class_v<T> && !std::is_array_v<T> || std::is_const_v<T> && !std::is_reference_v<T>, "const non-ref assert failed.")
+#define NON_CONST_NON_REFERENCE_ASSERT(T) static_assert(!std::is_const_v<T> && !std::is_reference_v<T>, "non-const non-ref assert failed.")
+
+#define ASSERT_ITERATOR_YIELD_TYPE(query, norm, cnst)\
+  using IteratorYieldType = decltype(*query.begin()); using ConstIteratorYieldType = decltype(*query.cbegin());\
+  norm(IteratorYieldType); cnst(ConstIteratorYieldType);
+
+#define ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, NON_CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
+#define ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
+
+#define ASSERT_QUERY_ITERATOR_YIELD_CONST_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
+#define ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_LVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_LVALUE_REFERENCE_ASSERT, CONST_LVALUE_REFERENCE_ASSERT)}
+
+#define ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, NON_CONST_NON_REFERENCE_ASSERT, NON_CONST_NON_REFERENCE_ASSERT)}
+#define ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, NON_CONST_NON_REFERENCE_ASSERT, NON_CONST_NON_REFERENCE_ASSERT)}
+
+#define ASSERT_QUERY_ITERATOR_YIELD_CONST_PRVALUE(query) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_NON_REFERENCE_ASSERT, CONST_NON_REFERENCE_ASSERT)}
+#define ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_PRVALUE(qeury) {ASSERT_ITERATOR_YIELD_TYPE(query, CONST_NON_REFERENCE_ASSERT, CONST_NON_REFERENCE_ASSERT)}
+
+  // create a list of tester
+
+  // create a list of visitor
+
+  // create a list of source (returning different value category)
+
+  auto x = Cinq(std::vector<std::string>());
+  using CinqType = decltype(x);
+  auto p = &CinqType::Select<std::function<int(std::string)>>;
+
+  // std::cout << typeid(p).name() << std::endl;
+
+  (std::move(x).*p)([](std::string) {return 0;});
+
+  // Select
+  {
+    {
+      auto query = Cinq(one_element).Select([](auto &&x) -> decltype(auto) {
+        NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+        return std::forward<decltype(x)>(x);
+      });
+      query.ToVector();
+
+      ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Const().Select([](auto &&x) -> decltype(auto) {
+        CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+        return std::forward<decltype(x)>(x);
+      });
+      query.ToVector();
+
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Select([](auto &&) { return std::string(); });
+      ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query);
+    }
+
+    {
+      auto query = Cinq(one_element).Const().Select([](auto &&) { return std::string(); });
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query);
+    }
+
+    {
+      auto query = Cinq(one_element).Select([](auto &&x) -> const std::string { return std::string(); });
+      ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query);
+    }
+
+    {
+      auto query = Cinq(one_element).Const().Select([](auto &&x) -> const std::string { return std::string(); });
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query);
+    }
+  }
+  
+  // SelectMany
+  {
+    {
+      auto query = Cinq(one_element).SelectMany([](auto &&x) {
+        NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+        return std::vector<int>();
+      });
+      query.ToVector();
+
+      ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Const().SelectMany([](auto &&x) {
+        CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+        return std::vector<int>();
+      });
+      query.ToVector();
+
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query)
+    }
+
+    struct Conatiner {
+      struct Iterator {
+        bool operator==(Iterator) const {return true;}
+        bool operator!=(Iterator) const {return false;}
+        Iterator &operator++() {return *this;}
+        Iterator operator++(int) {return {};}
+        std::string operator*() {return {};}
+        std::string operator*() const {return {};}
+      };
+
+      Iterator begin() {return {};}
+      Iterator end() {return {};}
+      Iterator begin() const {return {};}
+      Iterator end() const {return {};}
+    };
+
+    struct CConatiner {
+      struct Iterator {
+        bool operator==(Iterator) const {return true;}
+        bool operator!=(Iterator) const {return false;}
+        Iterator &operator++() {return *this;}
+        Iterator operator++(int) {return {};}
+        const std::string operator*() {return {};}
+        const std::string operator*() const {return {};}
+      };
+
+      Iterator begin() {return {};}
+      Iterator end() {return {};}
+      Iterator begin() const {return {};}
+      Iterator end() const {return {};}
+    };
+
+    {
+      auto query = Cinq(one_element).SelectMany([](auto &&) { return Conatiner(); });
+
+      ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Const().SelectMany([](auto &&) { return Conatiner(); });
+
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).SelectMany([](auto &&) { return CConatiner(); });
+
+      ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Const().SelectMany([](auto &&) { return CConatiner(); });
+
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+  }
+
+  // Where
+
+  // Join
+  {
+    {
+      std::string s;
+      auto query = Cinq(one_element).Join(one_element, [](auto &&x) -> decltype(auto) {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return std::forward<decltype(x)>(x);
+        }, [](auto &&x) -> decltype(auto) {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return x;
+        }, [&s](auto &&first, auto &&second) mutable -> std::string & {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(first));
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
+          return s;
+        });
+      query.ToVector();
+
+      ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Const().Join(one_element, [](auto &&x) -> decltype(auto) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return std::forward<decltype(x)>(x);
+        }, [](auto &&x) -> decltype(auto) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return x;
+        }, [](auto &&first, auto &&second) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(first));
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
+          return std::tie(first, second);
+        });
+      query.ToVector();
+
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Join(one_element, [](auto &&x) -> decltype(auto) {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return std::forward<decltype(x)>(x);
+        }, [](auto &&x) -> decltype(auto) {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return x;
+        }, [](auto &&first, auto &&second) {
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(first));
+          NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
+          return std::tie(first, second);
+        });
+      query.ToVector();
+
+      ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+
+    {
+      auto query = Cinq(one_element).Const().Join(one_element, [](auto &&x) -> decltype(auto) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return std::forward<decltype(x)>(x);
+        }, [](auto &&x) -> decltype(auto) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
+          return x;
+        }, [](auto &&first, auto &&second) {
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(first));
+          CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
+          return std::tie(first, second);
+        });
+      query.ToVector();
+
+      ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
+    }
+  }
+}
 
 } // namespace cinq_test

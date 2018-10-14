@@ -140,25 +140,8 @@ public:
 
   auto Distinct() && {
     // TODO : use ReferenceWrapper when possible
-    using ResultType = decltype(*std::declval<ResultIterator>());
-    using value_type = std::decay_t<ResultType>;
-    class DistinctHelper {
-      using InternalStorageType = std::conditional_t<std::is_reference_v<ResultType>,
-        cinq::utility::ReferenceWrapper<value_type>,
-        value_type>;
-
-    public:
-      bool operator()(const InternalStorageType &t) const { return distinct_set_.insert(t).second; };
-
-    private:
-      using SetType = std::conditional_t<cinq::utility::ReferenceWrapper<value_type>::hash_version,
-        std::unordered_set<InternalStorageType>,std::set<InternalStorageType>>;
-
-      mutable SetType distinct_set_;
-    };
-
-    using WhereType = Enumerable<ConstVersion, EnumerableCategory::Subrange, OperatorType::Where, DistinctHelper, TEnumerable>;
-    return Cinq<ConstVersion, WhereType>(DistinctHelper(), std::move(root_));
+    using DistinctType = Enumerable<ConstVersion, EnumerableCategory::Subrange, OperatorType::Distinct, bool, TEnumerable>;
+    return Cinq<ConstVersion, DistinctType>(true, std::move(root_));
   }
  
   auto ToVector() {

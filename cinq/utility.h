@@ -192,6 +192,32 @@ struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_compara
   const T &ref_;
 };
 
+template <class T>
+struct VisitTupleTree {
+  template <class Node, class Visitor, class LeafVisitor>
+  static void Visit(Node &&node, Visitor &&, LeafVisitor &&leaf_visitor) {
+    std::invoke(std::forward<LeafVisitor>(leaf_visitor), std::forward<Node>(node));
+  }
+};
+
+template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
+void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>);
+
+template <class... Ts>
+struct VisitTupleTree<std::tuple<Ts...>> {
+  template <class Node, class Visitor, class LeafVisitor>
+  static void Visit(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor) {
+    std::invoke(std::forward<Visitor>(visitor), std::forward<Node>(node));
+    VisitChild(std::forward<Node>(node), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor), std::index_sequence_for<Ts...>{});
+  }
+};
+
+template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
+void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>) {
+  (VisitTupleTree<std::decay_t<std::tuple_element_t<indexs, std::decay_t<Node>>>>::Visit(
+    std::get<indexs>(std::forward<Node>(node)), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor)), ...);
+}
+
 } // namespace utility
 
 } // namespace cinq

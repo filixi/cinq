@@ -804,4 +804,84 @@ protected:
   }
 };
 
+template <bool ArgConstness, bool RetConstness, class TFn, class TSource>
+class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<EnumerableCategory::Subrange, OperatorType::Distinct, TFn, TSource>> {
+public:
+  using Enumerable = BasicEnumerable<EnumerableCategory::Subrange, OperatorType::Distinct, TFn, TSource>;
+
+  using SourceIterator = typename Enumerable::template SourceIterator<0>;
+  using SourceIteratorYieldType = decltype(*std::declval<SourceIterator>());
+
+  using FunctionObjectArgumentType = cinq::utility::transform_to_function_object_argument_t<ArgConstness, SourceIteratorYieldType>;
+
+  using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, SourceIteratorYieldType, cinq::utility::SourceType::Iterator>;
+  using value_type = std::decay_t<ResultType>;
+
+  OperatorSpecializedIterator() : first_(), last_() {}
+
+  OperatorSpecializedIterator(Enumerable *enumerable, bool is_past_the_end_iteratorator)
+    : enumerable_(enumerable), is_past_the_end_iteratorator_(is_past_the_end_iteratorator) {
+    FindNextValideElement();
+  }
+
+  OperatorSpecializedIterator(const OperatorSpecializedIterator &) = default;
+  OperatorSpecializedIterator(OperatorSpecializedIterator &&) = default;
+
+  OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &) = default;
+  OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
+
+  ResultType operator*() const {
+    return *first_;
+  }
+
+  friend bool operator!=(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
+    return lhs.first_ != rhs.first_;
+  }
+
+  friend bool operator==(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
+    return lhs.first_ == rhs.first_;
+  }
+
+  OperatorSpecializedIterator &operator++() {
+    ++first_;
+    FindNextValideElement();
+    return *this;
+  }
+
+  OperatorSpecializedIterator operator++(int) {
+    OperatorSpecializedIterator previous(*this);
+    ++first_;
+    FindNextValideElement();
+    return previous;
+  }
+
+private:
+  void FindNextValideElement() {
+    while (first_ != last_ && !distinct_helper_(static_cast<FunctionObjectArgumentType>(*first_)))
+      ++first_;
+  }
+
+  Enumerable *enumerable_ = nullptr;
+
+  bool is_past_the_end_iteratorator_ = false;
+
+  class DistinctHelper {
+    using InternalStorageType = std::conditional_t<std::is_reference_v<ResultType>,
+      cinq::utility::ReferenceWrapper<value_type>,
+      value_type>;
+
+  public:
+    bool operator()(const InternalStorageType &t) const { return distinct_set_.insert(t).second; };
+
+  private:
+    using SetType = std::conditional_t<cinq::utility::ReferenceWrapper<value_type>::hash_version,
+      std::unordered_set<InternalStorageType>,std::set<InternalStorageType>>;
+
+    mutable SetType distinct_set_;
+  } distinct_helper_;
+
+  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::end(enumerable_->SourceFront()) : std::begin(enumerable_->SourceFront());
+  SourceIterator last_ = std::end(enumerable_->SourceFront());
+};
+
 } // namespace cinq_v3::detail
