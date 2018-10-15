@@ -10,7 +10,7 @@ using namespace cinq_v3;
 namespace cinq_test {
 // TODO : add test case for other containers
 // TODO : add test case for longer query
-void NoCopyGuaranteTeste()
+void NoCopyGuaranteeTest()
 {
   struct CopyDetector {
     CopyDetector() { ++GetCounter().ctor_counter_; }

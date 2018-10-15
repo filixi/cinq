@@ -104,7 +104,7 @@ int main() try {
   
   threads.emplace_back(cinq_test::BasicCombinedQueryTest);
 
-  threads.emplace_back(cinq_test::NoCopyGuaranteTeste);
+  threads.emplace_back(cinq_test::NoCopyGuaranteeTest);
   threads.emplace_back(cinq_test::SetOperationInternalContainerTest);
   threads.emplace_back(cinq_test::SetOperationAliasTest);
 

@@ -45,10 +45,15 @@ void IntersectTest() {
       auto ite = std::unique(result.begin(), result.end());
       result.erase(ite, result.end());
 
-      auto query = Cinq(source1).Intersect(source2).ToVector();
-      std::sort(query.begin(), query.end());
-      assert(query.size() == result.size() &&
-        std::equal(query.begin(), query.end(), result.begin()));
+      auto query = Cinq(source1).Intersect(source2);
+      auto vtr = query.ToVector();
+      std::sort(vtr.begin(), vtr.end());
+      assert(vtr.size() == result.size() &&
+        std::equal(vtr.begin(), vtr.end(), result.begin()));
+      vtr = query.ToVector();
+      std::sort(vtr.begin(), vtr.end());
+      assert(vtr.size() == result.size() &&
+        std::equal(vtr.begin(), vtr.end(), result.begin()));
 
       for (int k : test_set) {
         source3 = source_from_int(k);
@@ -60,18 +65,26 @@ void IntersectTest() {
         auto ite2 = std::unique(result3.begin(), result3.end());
         result3.erase(ite2, result3.end());
 
-        auto query2 = Cinq(source1).Intersect(source2, source3).ToVector();
-        std::sort(query2.begin(), query2.end());
-        assert(query2.size() == result3.size() &&
-          std::equal(query2.begin(), query2.end(), result3.begin()));
+        auto query2 = Cinq(source1).Intersect(source2, source3);
+        auto vtr2 = query2.ToVector();
+        std::sort(vtr2.begin(), vtr2.end());
+        assert(vtr2.size() == result3.size() &&
+          std::equal(vtr2.begin(), vtr2.end(), result3.begin()));
+        vtr2 = query2.ToVector();
+        std::sort(vtr2.begin(), vtr2.end());
+        assert(vtr2.size() == result3.size() &&
+          std::equal(vtr2.begin(), vtr2.end(), result3.begin()));
       }
     }
   }
 
   // # additional trivial test with 4 sources
   {
-    auto query = Cinq(empty_source).Intersect(empty_source, empty_source, empty_source).ToVector();
-    assert(query.size() == 0);
+    auto query = Cinq(empty_source).Intersect(empty_source, empty_source, empty_source);
+    auto vtr = query.ToVector();
+    assert(vtr.size() == 0);
+    vtr = query.ToVector();
+    assert(vtr.size() == 0);
   }
 }
 
@@ -107,10 +120,15 @@ void UnionTest() {
       auto ite = std::unique(result.begin(), result.end());
       result.erase(ite, result.end());
 
-      auto query = Cinq(source1).Union(source2).ToVector();
-      std::sort(query.begin(), query.end());
-      assert(query.size() == result.size() &&
-        std::equal(query.begin(), query.end(), result.begin()));
+      auto query = Cinq(source1).Union(source2);
+      auto vtr = query.ToVector();
+      std::sort(vtr.begin(), vtr.end());
+      assert(vtr.size() == result.size() &&
+        std::equal(vtr.begin(), vtr.end(), result.begin()));
+      vtr = query.ToVector();
+      std::sort(vtr.begin(), vtr.end());
+      assert(vtr.size() == result.size() &&
+        std::equal(vtr.begin(), vtr.end(), result.begin()));
 
       for (int k : test_set) {
         source3 = source_from_int(k);
@@ -122,18 +140,26 @@ void UnionTest() {
         auto ite2 = std::unique(result3.begin(), result3.end());
         result3.erase(ite2, result3.end());
 
-        auto query2 = Cinq(source1).Union(source2, source3).ToVector();
-        std::sort(query2.begin(), query2.end());
-        assert(query2.size() == result3.size() &&
-          std::equal(query2.begin(), query2.end(), result3.begin()));
+        auto query2 = Cinq(source1).Union(source2, source3);
+        auto vtr2 = query2.ToVector();
+        std::sort(vtr2.begin(), vtr2.end());
+        assert(vtr2.size() == result3.size() &&
+          std::equal(vtr2.begin(), vtr2.end(), result3.begin()));
+        vtr2 = query2.ToVector();
+        std::sort(vtr2.begin(), vtr2.end());
+        assert(vtr2.size() == result3.size() &&
+          std::equal(vtr2.begin(), vtr2.end(), result3.begin()));
       }
     }
   }
 
   // # additional trivial test with 4 sources
   {
-    auto query = Cinq(empty_source).Union(empty_source, empty_source, empty_source).ToVector();
-    assert(query.size() == 0);
+    auto query = Cinq(empty_source).Union(empty_source, empty_source, empty_source);
+    auto vtr = query.ToVector();
+    assert(vtr.size() == 0);
+    vtr = query.ToVector();
+    assert(vtr.size() == 0);
   }
 }
 
@@ -149,27 +175,39 @@ void ConcatTest() {
   // # includes all
   for (auto &s1 : sources) {
     for (auto &s2 : sources) {
-
-      auto query1 = Cinq(s1).Concat(s2).ToVector();
       std::vector<int> result1(s1);
       std::copy(s2.begin(), s2.end(), std::back_inserter(result1));
-      assert(query1.size() == result1.size() &&
-        std::equal(query1.begin(), query1.end(), result1.begin()));
+
+      auto query1 = Cinq(s1).Concat(s2);
+      auto vtr = query1.ToVector();
+      assert(vtr.size() == result1.size() &&
+        std::equal(vtr.begin(), vtr.end(), result1.begin()));
+      vtr = query1.ToVector();
+      assert(vtr.size() == result1.size() &&
+        std::equal(vtr.begin(), vtr.end(), result1.begin()));
 
       for (auto &s3 : sources) {
-        auto query2 = Cinq(s1).Concat(s2, s3).ToVector();
         std::vector<int> result2(result1);
         std::copy(s3.begin(), s3.end(), std::back_inserter(result2));
-        assert(query2.size() == result2.size() &&
-          std::equal(query2.begin(), query2.end(), result2.begin()));
+
+        auto query2 = Cinq(s1).Concat(s2, s3);
+        auto vtr2 = query2.ToVector();
+        assert(vtr2.size() == vtr2.size() &&
+          std::equal(vtr2.begin(), vtr2.end(), result2.begin()));
+        vtr2 = query2.ToVector();
+        assert(vtr2.size() == vtr2.size() &&
+          std::equal(vtr2.begin(), vtr2.end(), result2.begin()));
       }
     }
   }
 
   // # additional trivial test with 4 sources
   {
-    auto query = Cinq(empty_source).Concat(empty_source, empty_source, empty_source).ToVector();
-    assert(query.size() == 0);
+    auto query = Cinq(empty_source).Concat(empty_source, empty_source, empty_source);
+    auto vtr = query.ToVector();
+    assert(vtr.size() == 0);
+    vtr = query.ToVector();
+    assert(vtr.size() == 0);
   }
 }
 
@@ -178,14 +216,20 @@ void DistinctTest() {
 
   // $ is empty
   {
-    auto query = Cinq(empty_source).Distinct().ToVector();
-    assert(query.size() == 0);
+    auto query = Cinq(empty_source).Distinct();
+    auto vtr = query.ToVector();
+    assert(vtr.size() == 0);
+    vtr = query.ToVector();
+    assert(vtr.size() == 0);
   }
 
   // $ has one # has one # include first
   {
-    auto query = Cinq(one_element).Distinct().ToVector();
-    assert(query.size() == 1 && query[0] == one_element[0]);
+    auto query = Cinq(one_element).Distinct();
+    auto vtr = query.ToVector();
+    assert(vtr.size() == 1 && vtr[0] == one_element[0]);
+    vtr = query.ToVector();
+    assert(vtr.size() == 1 && vtr[0] == one_element[0]);
   }
 
   // $ has five # has multiple # include last # include a middle
@@ -194,9 +238,13 @@ void DistinctTest() {
     std::vector<int> special{
       1, 12, 12, 12, 99
     };
-    auto query = Cinq(special).Distinct().ToVector();
-    assert(query.size() == 3 &&
-      query[0] == 1 && query[1] == 12 && query[2] == 99);
+    auto query = Cinq(special).Distinct();
+    auto vtr = query.ToVector();
+    assert(vtr.size() == 3 &&
+      vtr[0] == 1 && vtr[1] == 12 && vtr[2] == 99);
+    vtr = query.ToVector();
+    assert(vtr.size() == 3 &&
+      vtr[0] == 1 && vtr[1] == 12 && vtr[2] == 99);
   }
 
   // # has multiple and include all
@@ -204,9 +252,13 @@ void DistinctTest() {
     std::vector<int> special{
       1, 2, 3, 4, 5
     };
-    auto query = Cinq(special).Distinct().ToVector();
-    assert(query.size() == special.size() &&
-      std::equal(query.begin(), query.end(), special.begin()));
+    auto query = Cinq(special).Distinct();
+    auto vtr = query.ToVector();
+    assert(vtr.size() == special.size() &&
+      std::equal(vtr.begin(), vtr.end(), special.begin()));
+    vtr = query.ToVector();
+    assert(vtr.size() == special.size() &&
+      std::equal(vtr.begin(), vtr.end(), special.begin()));
   }
 }
 
