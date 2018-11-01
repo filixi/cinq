@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 #include <memory>
 #include <type_traits>
 
@@ -222,13 +224,68 @@ void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std:
 
 } // namespace cinq
 
+namespace cinq_test {
+struct SpecialInt {
+  SpecialInt(int v) noexcept : value_(v) {}
+
+  SpecialInt(const SpecialInt &v) noexcept : value_(v.value_) { assert(v.is_valid_); }
+  SpecialInt(SpecialInt &&v) noexcept : value_(v.value_) { assert(v.is_valid_); v.is_valid_ = false; }
+
+  ~SpecialInt() noexcept { assert(!is_destoryed_); is_valid_ = false; is_destoryed_ = true; }
+
+  SpecialInt &operator=(const SpecialInt &v) noexcept {
+    assert(v.is_valid_ && !is_destoryed_);
+
+    value_ = v.value_;
+    is_valid_ = true;
+    return *this;
+  }
+  SpecialInt &operator=(SpecialInt &&v) noexcept {
+    assert(v.is_valid_ && !is_destoryed_);
+    v.is_valid_ = false;
+
+    value_ = v.value_;
+    is_valid_ = true;
+    return *this;
+  }
+
+  operator int &() noexcept {
+    assert(is_valid_);
+    return value_;
+  }
+  operator const int &() const noexcept {
+    assert(is_valid_);
+    return value_;
+  }
+
+  bool operator<(const int &rhs) const noexcept {
+    return int(*this) < rhs;
+  }
+  bool operator==(const int &rhs) const noexcept {
+    return int(*this) == rhs;
+  }
+
+  int value_;
+  bool is_valid_ = true;
+  bool is_destoryed_ = false;
+};
+
+const std::vector<SpecialInt> empty_source;
+const std::vector<SpecialInt> one_element{ 0 };
+const std::vector<SpecialInt> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
+
+} // namespace cinq_test
+
 namespace std {
 template <class T>
 struct hash<cinq::utility::ReferenceWrapper<T>> {
-  size_t operator()(const T &t) const {
+  size_t operator()(const T &t) const noexcept(noexcept(h_(t))) {
     return static_cast<size_t>(h_(t));
   }
   std::hash<std::decay_t<T>> h_;
 };
+
+template <>
+struct hash<cinq_test::SpecialInt> : hash<int> {};
 
 } // namespace std

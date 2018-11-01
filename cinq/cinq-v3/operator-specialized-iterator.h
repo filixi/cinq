@@ -307,8 +307,7 @@ public:
     assert(!is_past_the_end_iteratorator_);
     ++first2_;
     if (!(first2_ != last2_)) {
-      first2_.~SourceIterator2();
-      new(&first2_) SourceIterator2(std::begin(enumerable_->template GetSource<1>()));
+      first2_ = SourceIterator2(std::begin(enumerable_->template GetSource<1>()));
       ++first_;
     }
     return *this;

@@ -98,21 +98,21 @@ int main() try {
 
   std::vector<std::thread> threads;
 
-  threads.emplace_back(TestCinqInitialization);
+  threads.emplace_back(cinq_test::TestCinqInitialization);
   threads.emplace_back(cinq_test::CompileTimeValueCategoryTest);
   threads.emplace_back(cinq_test::RuntimeValueCategoryTest);
   
-  threads.emplace_back(cinq_test::BasicCombinedQueryTest);
+  threads.emplace_back(cinq_test::LifeTimeTest);
 
   threads.emplace_back(cinq_test::NoCopyGuaranteeTest);
   threads.emplace_back(cinq_test::SetOperationInternalContainerTest);
   threads.emplace_back(cinq_test::SetOperationAliasTest);
 
-  threads.emplace_back(TestCinqSelectMany);
-  threads.emplace_back(TestCinqSelect);
-  threads.emplace_back(TestCinqJoin);
-  threads.emplace_back(TestCinqWhere);
-  threads.emplace_back(TestCinqToVector);
+  threads.emplace_back(cinq_test::TestCinqSelectMany);
+  threads.emplace_back(cinq_test::TestCinqSelect);
+  threads.emplace_back(cinq_test::TestCinqJoin);
+  threads.emplace_back(cinq_test::TestCinqWhere);
+  threads.emplace_back(cinq_test::TestCinqToVector);
   threads.emplace_back(cinq_test::IntersectTest);
   threads.emplace_back(cinq_test::UnionTest);
   threads.emplace_back(cinq_test::ConcatTest);

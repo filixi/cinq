@@ -11,10 +11,6 @@ using cinq_v3::Cinq;
 
 namespace cinq_test {
 
-const std::vector<int> empty_source;
-const std::vector<int> one_element{ 0 };
-const std::vector<int> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
-
 using VCRetType = std::shared_ptr<int>;
 
 template <class T>
@@ -460,10 +456,12 @@ void CompileTimeValueCategoryTest() {
 
   (std::move(x).*p)([](std::string) {return 0;});
 
+  const std::vector<int> vtr{ 0 };
+
   // Select
   {
     {
-      auto query = Cinq(one_element).Select([](auto &&x) -> decltype(auto) {
+      auto query = Cinq(vtr).Select([](auto &&x) -> decltype(auto) {
         NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::forward<decltype(x)>(x);
       });
@@ -473,7 +471,7 @@ void CompileTimeValueCategoryTest() {
     }
 
     {
-      auto query = Cinq(one_element).Const().Select([](auto &&x) -> decltype(auto) {
+      auto query = Cinq(vtr).Const().Select([](auto &&x) -> decltype(auto) {
         CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::forward<decltype(x)>(x);
       });
@@ -483,22 +481,22 @@ void CompileTimeValueCategoryTest() {
     }
 
     {
-      auto query = Cinq(one_element).Select([](auto &&) { return std::string(); });
+      auto query = Cinq(vtr).Select([](auto &&) { return std::string(); });
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
 
     {
-      auto query = Cinq(one_element).Const().Select([](auto &&) { return std::string(); });
+      auto query = Cinq(vtr).Const().Select([](auto &&) { return std::string(); });
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
 
     {
-      auto query = Cinq(one_element).Select([](auto &&x) -> const std::string { return std::string(); });
+      auto query = Cinq(vtr).Select([](auto &&x) -> const std::string { return std::string(); });
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
 
     {
-      auto query = Cinq(one_element).Const().Select([](auto &&x) -> const std::string { return std::string(); });
+      auto query = Cinq(vtr).Const().Select([](auto &&x) -> const std::string { return std::string(); });
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
   }
@@ -506,7 +504,7 @@ void CompileTimeValueCategoryTest() {
   // SelectMany
   {
     {
-      auto query = Cinq(one_element).SelectMany([](auto &&x) {
+      auto query = Cinq(vtr).SelectMany([](auto &&x) {
         NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::vector<int>();
       });
@@ -516,7 +514,7 @@ void CompileTimeValueCategoryTest() {
     }
 
     {
-      auto query = Cinq(one_element).Const().SelectMany([](auto &&x) {
+      auto query = Cinq(vtr).Const().SelectMany([](auto &&x) {
         CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::vector<int>();
       });
@@ -558,25 +556,25 @@ void CompileTimeValueCategoryTest() {
     };
 
     {
-      auto query = Cinq(one_element).SelectMany([](auto &&) { return Conatiner(); });
+      auto query = Cinq(vtr).SelectMany([](auto &&) { return Conatiner(); });
 
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
 
     {
-      auto query = Cinq(one_element).Const().SelectMany([](auto &&) { return Conatiner(); });
+      auto query = Cinq(vtr).Const().SelectMany([](auto &&) { return Conatiner(); });
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
 
     {
-      auto query = Cinq(one_element).SelectMany([](auto &&) { return CConatiner(); });
+      auto query = Cinq(vtr).SelectMany([](auto &&) { return CConatiner(); });
 
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
 
     {
-      auto query = Cinq(one_element).Const().SelectMany([](auto &&) { return CConatiner(); });
+      auto query = Cinq(vtr).Const().SelectMany([](auto &&) { return CConatiner(); });
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
@@ -588,7 +586,7 @@ void CompileTimeValueCategoryTest() {
   {
     {
       std::string s;
-      auto query = Cinq(one_element).Join(one_element, [](auto &&x) -> decltype(auto) {
+      auto query = Cinq(vtr).Join(vtr, [](auto &&x) -> decltype(auto) {
           NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
           return std::forward<decltype(x)>(x);
         }, [](auto &&x) -> decltype(auto) {
@@ -605,7 +603,7 @@ void CompileTimeValueCategoryTest() {
     }
 
     {
-      auto query = Cinq(one_element).Const().Join(one_element, [](auto &&x) -> decltype(auto) {
+      auto query = Cinq(vtr).Const().Join(vtr, [](auto &&x) -> decltype(auto) {
           CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
           return std::forward<decltype(x)>(x);
         }, [](auto &&x) -> decltype(auto) {
@@ -622,7 +620,7 @@ void CompileTimeValueCategoryTest() {
     }
 
     {
-      auto query = Cinq(one_element).Join(one_element, [](auto &&x) -> decltype(auto) {
+      auto query = Cinq(vtr).Join(vtr, [](auto &&x) -> decltype(auto) {
           NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
           return std::forward<decltype(x)>(x);
         }, [](auto &&x) -> decltype(auto) {
@@ -639,7 +637,7 @@ void CompileTimeValueCategoryTest() {
     }
 
     {
-      auto query = Cinq(one_element).Const().Join(one_element, [](auto &&x) -> decltype(auto) {
+      auto query = Cinq(vtr).Const().Join(vtr, [](auto &&x) -> decltype(auto) {
           CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
           return std::forward<decltype(x)>(x);
         }, [](auto &&x) -> decltype(auto) {

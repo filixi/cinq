@@ -15,6 +15,7 @@
 #include <functional>
 
 #include "cinq-v3.h"
+#include "../cinq/utility.h"
 using cinq_v3::Cinq;
 
 
@@ -26,7 +27,7 @@ namespace cinq_test {
 void CompileTimeValueCategoryTest();
 void RuntimeValueCategoryTest();
 
-void BasicCombinedQueryTest();
+void LifeTimeTest();
 
 void IntersectTest();
 void UnionTest();
@@ -37,12 +38,6 @@ void NoCopyGuaranteeTest();
 void SetOperationInternalContainerTest();
 void SetOperationAliasTest();
 
-} // namespace cinq_test
-
-const std::vector<int> empty_source;
-const std::vector<int> one_element{ 0 };
-const std::vector<int> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
-
 class MiniContainer {
 public:
   auto begin() { return std::begin(data); }
@@ -52,14 +47,14 @@ public:
   auto end() const { return std::cend(data); }
 
 private:
-  int data[5] = { 1, 2, 3, 4, 5 };
+  SpecialInt data[5] = { 1, 2, 3, 4, 5 };
 };
 
 void TestCinqInitialization() {
-  std::vector<int> vtr{ 1, 2, 3, 4, 5 };
-  int arr[] = { 1, 2, 3, 4, 5 };
+  std::vector<SpecialInt> vtr{ 1, 2, 3, 4, 5 };
+  SpecialInt arr[] = { 1, 2, 3, 4, 5 };
   MiniContainer c;
-  auto shared_vtr = std::make_shared<std::vector<int>>();
+  auto shared_vtr = std::make_shared<std::vector<SpecialInt>>();
 
   Cinq(vtr);
   Cinq(std::ref(vtr));
@@ -75,19 +70,19 @@ void TestCinqInitialization() {
   Cinq(std::cref(c));
   Cinq(std::move(c));
 
-  Cinq(std::vector<int>{1, 2, 3, 4, 5});
-  Cinq(std::forward_list<int>{1, 2, 3, 4, 5});
+  Cinq(std::vector<SpecialInt>{1, 2, 3, 4, 5});
+  Cinq(std::forward_list<SpecialInt>{1, 2, 3, 4, 5});
   Cinq(MiniContainer());
   Cinq({ 1, 2, 3, 4, 5 });
 
   Cinq(shared_vtr);
-  Cinq(std::make_unique<std::vector<int>>());
+  Cinq(std::make_unique<std::vector<SpecialInt>>());
 }
 
 void TestCinqSelectMany() {
   // $ is empty
   {
-    auto query = Cinq(empty_source).SelectMany([](auto) {return std::vector<int>{}; });
+    auto query = Cinq(empty_source).SelectMany([](auto) {return std::vector<SpecialInt>{}; });
     assert(
       query.ToVector().size() == 0 && 
       query.ToVector().size() == 0
@@ -96,7 +91,7 @@ void TestCinqSelectMany() {
 
   // $ has one element # is empty
   {
-    auto query = Cinq(one_element).SelectMany([](auto) {return std::vector<int>{}; });
+    auto query = Cinq(one_element).SelectMany([](auto) {return std::vector<SpecialInt>{}; });
     assert(
       query.ToVector().size() == 0 &&
       query.ToVector().size() == 0
@@ -105,7 +100,7 @@ void TestCinqSelectMany() {
 
   // # has one element
   {
-    auto query = Cinq(one_element).SelectMany([](auto x) {return std::vector<int>(1, x); });
+    auto query = Cinq(one_element).SelectMany([](auto x) {return std::vector<SpecialInt>(1, x); });
     assert(
       query.ToVector().size() == 1 && query.ToVector()[0] == 0 &&
       query.ToVector().size() == 1 && query.ToVector()[0] == 0
@@ -114,7 +109,7 @@ void TestCinqSelectMany() {
 
   // $ has five_elements # has multiple elements
   {
-    auto query = Cinq(five_elements).SelectMany([](auto x) {return std::vector<int>(1, x); });
+    auto query = Cinq(five_elements).SelectMany([](auto x) {return std::vector<SpecialInt>(1, x); });
     auto vtr = query.ToVector();
     assert(
       vtr.size() == five_elements.size() &&
@@ -308,7 +303,7 @@ void TestCinqWhere() {
   // $ has five element # has multiple elements # excludes the first # includes a middle
   {
     auto query = Cinq(five_elements).Where([](auto x) {return x != five_elements.front(); });
-    std::deque<int> result(five_elements.begin(), five_elements.end());
+    std::deque<SpecialInt> result(five_elements.begin(), five_elements.end());
     result.pop_front();
 
     auto vtr = query.ToVector();
@@ -322,7 +317,7 @@ void TestCinqWhere() {
   // # includes the first # excludes the last
   {
     auto query = Cinq(five_elements).Where([](auto x) {return x != five_elements.back(); });
-    std::deque<int> result(five_elements.begin(), five_elements.end());
+    std::deque<SpecialInt> result(five_elements.begin(), five_elements.end());
     result.pop_back();
 
     auto vtr = query.ToVector();
@@ -336,7 +331,7 @@ void TestCinqWhere() {
   // # includes the last # excludes a middle
   {
     auto query = Cinq(five_elements).Where([](auto x) {return x != five_elements[3]; });
-    std::list<int> result(five_elements.begin(), five_elements.end());
+    std::list<SpecialInt> result(five_elements.begin(), five_elements.end());
     result.remove_if([](auto x) { return x == five_elements[3]; });
 
     auto vtr = query.ToVector();
@@ -362,6 +357,8 @@ void TestCinqWhere() {
 void TestCinqToVector() {
   // postpond. ToVector is trivial and is used in most unit test.
 }
+
+} // namespace cinq_test
 
 #endif // ENABLE_TEST
 

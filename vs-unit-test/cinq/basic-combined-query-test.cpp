@@ -64,8 +64,9 @@ inline void hash_combine_impl(std::uint64_t& h, std::uint64_t k) {
   h += 0xe6546b64;
 }
 
-void BasicCombinedQueryTest() {
-  auto result = QueryGenerator(std::vector<int>{1, 1, 2, 2, 3, 11 ,13 ,15 ,17}, [](auto &&) {return true;}, std::make_tuple(
+template <class T>
+void BasicCombinedQueryTest(T source) {
+  auto result = QueryGenerator(std::move(source), [](auto &&) {return true;}, std::make_tuple(
       [](const int &x) -> const int & {return x;},
       [](const int &x) -> const int & {return x;},
       [](const int &x, const int &) -> const int & {return x;}
@@ -86,6 +87,15 @@ void BasicCombinedQueryTest() {
         }
     );
   assert(last_hash == hash);
+}
+
+void LifeTimeTest() {
+  std::vector<SpecialInt> vtr{1, 1, 2, 2, 3, 11 ,13 ,15 ,17};
+
+  BasicCombinedQueryTest(vtr);
+  BasicCombinedQueryTest(std::ref(vtr));
+  BasicCombinedQueryTest(std::cref(vtr));
+  BasicCombinedQueryTest(std::make_shared<decltype(vtr)>(vtr));
 }
 
 } // namespace cinq_test
