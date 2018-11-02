@@ -46,13 +46,6 @@ constexpr bool right_fold_and() {
 template <bool... value>
 inline constexpr bool right_fold_and_v = right_fold_and<value...>();
 
-template <class Fn, class... Args>
-constexpr bool is_callable(std::invoke_result_t<Fn, Args...> *) { return true; }
-template <class Fn, class... Args>
-constexpr bool is_callable(...) { return false; }
-template <class Fn, class... Args>
-inline constexpr bool is_callable_v = is_callable<Fn, Args...>(nullptr);
-
 template <class T, class = void>
 struct is_hashable : std::false_type {};
 template <class T>

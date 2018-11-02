@@ -22,6 +22,10 @@
     <ClCompile Include="basic-combined-query-test.cpp" />
     <ClCompile Include="cinq.cpp" />
     <ClCompile Include="guarantee-test.cpp" />
+    <ClCompile Include="life-time-cref-vtr-test.cpp" />
+    <ClCompile Include="life-time-ref-vtr-test.cpp" />
+    <ClCompile Include="life-time-shared-ptr-vtr-test.cpp" />
+    <ClCompile Include="life-time-vtr-test.cpp" />
     <ClCompile Include="set-operation-test.cpp" />
     <ClCompile Include="value-category-test.cpp" />
   </ItemGroup>
@@ -32,9 +36,11 @@
     <ClInclude Include="..\..\cinq\cinq-v3\enumerable.h" />
     <ClInclude Include="..\..\cinq\cinq-v3\operator-category.h" />
     <ClInclude Include="..\..\cinq\cinq-v3\operator-specialized-iterator.h" />
+    <ClInclude Include="..\..\cinq\concept.h" />
     <ClInclude Include="..\..\cinq\utility.h" />
     <ClInclude Include="..\..\include\cinq-v3.h" />
     <ClInclude Include="cinq-test.h" />
+    <ClInclude Include="query-generator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

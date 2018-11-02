@@ -13,6 +13,7 @@
 
 #include "enumerable.h"
 #include "enumerable-source.h"
+#include "../concept.h"
 
 namespace cinq_v3 {
 namespace detail {
@@ -173,6 +174,12 @@ private:
 namespace ImplDetail {
 template <bool ConstVersion, class TEnumerable>
 decltype(auto) CinqImpl(TEnumerable &&container) {
+  if constexpr (cinq::utility::is_smart_ptr_v<std::decay_t<TEnumerable>>) {
+    static_assert(cinq_concept::ContainerCheck<true, typename std::decay_t<TEnumerable>::element_type>(), "Bad enumerable");
+  } else {
+    static_assert(cinq_concept::ContainerCheck<true, std::decay_t<TEnumerable>>(), "Bad enumerable");
+  }
+
   if constexpr (detail::is_cinq_v<std::decay_t<TEnumerable>>)
     return std::forward<TEnumerable &&>(container);
   else
@@ -191,6 +198,12 @@ auto CinqImpl(const T (&container)[size]) {
 
 template <bool ConstVersion, class TEnumerable>
 auto CinqImpl(std::reference_wrapper<TEnumerable> container) {
+  if constexpr (cinq::utility::is_smart_ptr_v<std::decay_t<TEnumerable>>) {
+    static_assert(cinq_concept::ContainerCheck<true, typename std::decay_t<TEnumerable>::element_type>(), "Bad enumerable");
+  } else {
+    static_assert(cinq_concept::ContainerCheck<true, TEnumerable &>(), "Bad enumerable");
+  }
+
   if constexpr (std::is_const_v<TEnumerable>)
     return detail::Cinq<ConstVersion, detail::EnumerableSource<true, TEnumerable &>>(container.get());
   else

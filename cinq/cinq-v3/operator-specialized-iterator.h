@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <variant>
 
+#include "../cinq/concept.h"
 #include "operator-category.h"
 
 namespace cinq_v3::detail {
@@ -36,6 +37,9 @@ public:
 
   using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, ProducedType, cinq::utility::SourceType::Iterator>;
   using value_type = std::decay_t<ResultType>;
+
+  static_assert(cinq_concept::SelectorCheck<TFn, FunctionObjectArgumentType>() &&
+    cinq_concept::SelectManySelectorCheck<true, TFn, FunctionObjectArgumentType>(), "Bad selector");
 
   class BaseIterator {
   public:
@@ -213,6 +217,8 @@ public:
   using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, FunctionObjectYieldType, cinq::utility::SourceType::FunctionObject>;
   using value_type = std::decay_t<ResultType>;
 
+  static_assert(cinq_concept::SelectorCheck<TFn, FunctionObjectArgumentType>(), "Bad selector");
+
   OperatorSpecializedIterator() {}
 
   OperatorSpecializedIterator(Enumerable *enumerable, bool is_past_the_end_iteratorator)
@@ -274,6 +280,8 @@ public:
   using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, FunctionObjectYieldType, cinq::utility::SourceType::FunctionObject>;
 
   using value_type = std::decay_t<ResultType>;
+
+  static_assert(cinq_concept::SelectorCheck<TFn, FunctionObjectArgumentTupleElementType, FunctionObjectArgumentTupleElementType2>(), "Bad selector");
 
   OperatorSpecializedIterator() : first_(), first2_(), last2_() {}
 
@@ -343,6 +351,8 @@ public:
 
   using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, SourceIteratorYieldType, cinq::utility::SourceType::Iterator>;
   using value_type = std::decay_t<ResultType>;
+
+  static_assert(cinq_concept::PredicateCheck<TFn, FunctionObjectArgumentType>(), "Bad predicate");
 
   OperatorSpecializedIterator() : first_(), last_() {}
 
@@ -878,6 +888,8 @@ private:
 
     mutable SetType distinct_set_;
   } distinct_helper_;
+
+  static_assert(cinq_concept::PredicateCheck<DistinctHelper, FunctionObjectArgumentType>(), "(Internal error) Bad predicate");
 
   SourceIterator first_ = is_past_the_end_iteratorator_ ? std::end(enumerable_->SourceFront()) : std::begin(enumerable_->SourceFront());
   SourceIterator last_ = std::end(enumerable_->SourceFront());

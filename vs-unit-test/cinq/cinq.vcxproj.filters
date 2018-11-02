@@ -33,6 +33,18 @@
     <ClCompile Include="guarantee-test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="life-time-vtr-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="life-time-cref-vtr-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="life-time-ref-vtr-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="life-time-shared-ptr-vtr-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\cinq\cinq-v3\aggregated-functions.h">
@@ -60,6 +72,12 @@
       <Filter>cinq-v3</Filter>
     </ClInclude>
     <ClInclude Include="cinq-test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cinq\concept.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="query-generator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
