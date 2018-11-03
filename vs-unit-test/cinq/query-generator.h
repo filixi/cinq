@@ -6,8 +6,9 @@
 #include <memory>
 #include <utility>
 
-#include <cinq-v3.h>
-using cinq_v3::Cinq;
+#include "cinq.h"
+#include "cinq-test-utility.h"
+using cinq::Cinq;
 
 namespace cinq_test {
 template <class T>
@@ -75,7 +76,7 @@ void BasicCombinedQueryTest(T source) {
   
   const size_t last_hash = 0xde24b45c4e881882;
   size_t hash = 0;
-  cinq::utility::VisitTupleTree<decltype(appended)>::Visit(
+  VisitTupleTree<decltype(appended)>::Visit(
       appended, [](auto &&) {}, [&hash](auto &&query) {
           for (auto x : *query)
             hash_combine_impl(hash, x);

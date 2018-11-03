@@ -13,8 +13,14 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="cinq-v3">
+    <Filter Include="cinq">
       <UniqueIdentifier>{8602b82d-3b19-4947-97b7-7a5d58e9f0ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cinq\cinq">
+      <UniqueIdentifier>{e48bfb35-286b-48e8-ab00-31249cde5371}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cinq\detail">
+      <UniqueIdentifier>{5877dc2a-47c3-4c71-8b19-a4baf6afe551}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -47,38 +53,44 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\cinq\cinq-v3\aggregated-functions.h">
-      <Filter>cinq-v3</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\cinq\cinq-v3\enumerable.h">
-      <Filter>cinq-v3</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\cinq\cinq-v3\enumerable-source.h">
-      <Filter>cinq-v3</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\cinq\cinq-v3\operator-category.h">
-      <Filter>cinq-v3</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\cinq\cinq-v3\operator-specialized-iterator.h">
-      <Filter>cinq-v3</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\cinq-v3.h">
-      <Filter>cinq-v3</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\cinq\utility.h">
+    <ClInclude Include="query-generator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\cinq\cinq-v3\cinq.h">
-      <Filter>cinq-v3</Filter>
+    <ClInclude Include="..\..\include\cinq.h">
+      <Filter>cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\aggregated-functions.h">
+      <Filter>cinq\cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\cinq.h">
+      <Filter>cinq\cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\enumerable.h">
+      <Filter>cinq\cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\enumerable-source.h">
+      <Filter>cinq\cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\operator-category.h">
+      <Filter>cinq\cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\operator-specialized-iterator.h">
+      <Filter>cinq\cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\detail\concept.h">
+      <Filter>cinq\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\detail\utility.h">
+      <Filter>cinq\detail</Filter>
     </ClInclude>
     <ClInclude Include="cinq-test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\cinq\concept.h">
+    <ClInclude Include="cinq-test-utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="query-generator.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\include\cinq\multi-enumerables-visitor.h">
+      <Filter>cinq\cinq</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

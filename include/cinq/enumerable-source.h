@@ -1,12 +1,12 @@
 #pragma once
 
+#include <functional>
 #include <iterator>
 #include <type_traits>
 
-#include "../utility.h"
+#include "detail/utility.h"
 
-namespace cinq_v3::detail {
-
+namespace cinq::detail {
 template <bool ConstVersion, class TSource>
 struct EnumerableSource;
 
@@ -89,4 +89,4 @@ private:
   TSource source_;
 };
 
-} // namespace cinq_v3::detail
+} // namespace cinq::detail

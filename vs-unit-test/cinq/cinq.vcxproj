@@ -30,15 +30,17 @@
     <ClCompile Include="value-category-test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\cinq\cinq-v3\aggregated-functions.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\cinq.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\enumerable-source.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\enumerable.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\operator-category.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\operator-specialized-iterator.h" />
-    <ClInclude Include="..\..\cinq\concept.h" />
-    <ClInclude Include="..\..\cinq\utility.h" />
-    <ClInclude Include="..\..\include\cinq-v3.h" />
+    <ClInclude Include="..\..\include\cinq.h" />
+    <ClInclude Include="..\..\include\cinq\aggregated-functions.h" />
+    <ClInclude Include="..\..\include\cinq\cinq.h" />
+    <ClInclude Include="..\..\include\cinq\enumerable-source.h" />
+    <ClInclude Include="..\..\include\cinq\enumerable.h" />
+    <ClInclude Include="..\..\include\cinq\multi-enumerables-visitor.h" />
+    <ClInclude Include="..\..\include\cinq\operator-category.h" />
+    <ClInclude Include="..\..\include\cinq\operator-specialized-iterator.h" />
+    <ClInclude Include="..\..\include\detail\concept.h" />
+    <ClInclude Include="..\..\include\detail\utility.h" />
+    <ClInclude Include="cinq-test-utility.h" />
     <ClInclude Include="cinq-test.h" />
     <ClInclude Include="query-generator.h" />
   </ItemGroup>
@@ -102,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\felix\Documents\repo\cinq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -113,7 +115,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\felix\Documents\repo\cinq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -127,7 +129,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\felix\Documents\repo\cinq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -145,7 +147,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\felix\Documents\repo\cinq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

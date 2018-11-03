@@ -3,9 +3,9 @@
 #include <type_traits>
 #include <iterator>
 
-#include "../cinq/utility.h"
+#include "utility.h"
 
-namespace cinq_concept {
+namespace cinq::detail::concept {
 template <class T>
 constexpr bool ContainerConstructibleCheck() {
   return std::is_constructible_v<std::decay_t<T>, T>;
@@ -133,4 +133,4 @@ constexpr bool SelectManyConceptCheck() {
   return false;
 }
 
-} // namespace cinq_concept
+} // namespace cinq::detail::concept

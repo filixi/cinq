@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include <cinq-v3.h>
-using namespace cinq_v3;
+#include <cinq.h>
+using cinq::Cinq;
 
 namespace cinq_test {
 // TODO : add test case for other containers

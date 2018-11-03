@@ -14,10 +14,10 @@
 #include <string>
 #include <functional>
 
-#include "cinq-v3.h"
-#include "../cinq/utility.h"
-using cinq_v3::Cinq;
-
+#include "cinq.h"
+#include "cinq-test-utility.h"
+#include "detail/utility.h"
+using cinq::Cinq;
 
 #define ENABLE_TEST
 
@@ -47,14 +47,14 @@ public:
   auto end() const { return std::cend(data); }
 
 private:
-  SpecialInt data[5] = { 1, 2, 3, 4, 5 };
+  LifeTimeCheckInt data[5] = { 1, 2, 3, 4, 5 };
 };
 
 void TestCinqInitialization() {
-  std::vector<SpecialInt> vtr{ 1, 2, 3, 4, 5 };
-  SpecialInt arr[] = { 1, 2, 3, 4, 5 };
+  std::vector<LifeTimeCheckInt> vtr{ 1, 2, 3, 4, 5 };
+  LifeTimeCheckInt arr[] = { 1, 2, 3, 4, 5 };
   MiniContainer c;
-  auto shared_vtr = std::make_shared<std::vector<SpecialInt>>();
+  auto shared_vtr = std::make_shared<std::vector<LifeTimeCheckInt>>();
 
   Cinq(vtr);
   Cinq(std::ref(vtr));
@@ -70,19 +70,27 @@ void TestCinqInitialization() {
   Cinq(std::cref(c));
   Cinq(std::move(c));
 
-  Cinq(std::vector<SpecialInt>{1, 2, 3, 4, 5});
-  Cinq(std::forward_list<SpecialInt>{1, 2, 3, 4, 5});
+  Cinq(std::vector<LifeTimeCheckInt>{1, 2, 3, 4, 5});
+  Cinq(std::forward_list<LifeTimeCheckInt>{1, 2, 3, 4, 5});
   Cinq(MiniContainer());
   Cinq({ 1, 2, 3, 4, 5 });
 
   Cinq(shared_vtr);
-  Cinq(std::make_unique<std::vector<SpecialInt>>());
+  Cinq(std::make_unique<std::vector<LifeTimeCheckInt>>());
+
+  Cinq(std::ref(shared_vtr));
+  Cinq(std::cref(shared_vtr));
+  Cinq(std::move(shared_vtr));
+
+  auto unique_vtr = std::make_unique<std::vector<LifeTimeCheckInt>>();
+  Cinq(std::ref(unique_vtr));
+  Cinq(std::cref(unique_vtr));
 }
 
 void TestCinqSelectMany() {
   // $ is empty
   {
-    auto query = Cinq(empty_source).SelectMany([](auto) {return std::vector<SpecialInt>{}; });
+    auto query = Cinq(empty_source).SelectMany([](auto) {return std::vector<LifeTimeCheckInt>{}; });
     assert(
       query.ToVector().size() == 0 && 
       query.ToVector().size() == 0
@@ -91,7 +99,7 @@ void TestCinqSelectMany() {
 
   // $ has one element # is empty
   {
-    auto query = Cinq(one_element).SelectMany([](auto) {return std::vector<SpecialInt>{}; });
+    auto query = Cinq(one_element).SelectMany([](auto) {return std::vector<LifeTimeCheckInt>{}; });
     assert(
       query.ToVector().size() == 0 &&
       query.ToVector().size() == 0
@@ -100,7 +108,7 @@ void TestCinqSelectMany() {
 
   // # has one element
   {
-    auto query = Cinq(one_element).SelectMany([](auto x) {return std::vector<SpecialInt>(1, x); });
+    auto query = Cinq(one_element).SelectMany([](auto x) {return std::vector<LifeTimeCheckInt>(1, x); });
     assert(
       query.ToVector().size() == 1 && query.ToVector()[0] == 0 &&
       query.ToVector().size() == 1 && query.ToVector()[0] == 0
@@ -109,7 +117,7 @@ void TestCinqSelectMany() {
 
   // $ has five_elements # has multiple elements
   {
-    auto query = Cinq(five_elements).SelectMany([](auto x) {return std::vector<SpecialInt>(1, x); });
+    auto query = Cinq(five_elements).SelectMany([](auto x) {return std::vector<LifeTimeCheckInt>(1, x); });
     auto vtr = query.ToVector();
     assert(
       vtr.size() == five_elements.size() &&
@@ -303,7 +311,7 @@ void TestCinqWhere() {
   // $ has five element # has multiple elements # excludes the first # includes a middle
   {
     auto query = Cinq(five_elements).Where([](auto x) {return x != five_elements.front(); });
-    std::deque<SpecialInt> result(five_elements.begin(), five_elements.end());
+    std::deque<LifeTimeCheckInt> result(five_elements.begin(), five_elements.end());
     result.pop_front();
 
     auto vtr = query.ToVector();
@@ -317,7 +325,7 @@ void TestCinqWhere() {
   // # includes the first # excludes the last
   {
     auto query = Cinq(five_elements).Where([](auto x) {return x != five_elements.back(); });
-    std::deque<SpecialInt> result(five_elements.begin(), five_elements.end());
+    std::deque<LifeTimeCheckInt> result(five_elements.begin(), five_elements.end());
     result.pop_back();
 
     auto vtr = query.ToVector();
@@ -331,7 +339,7 @@ void TestCinqWhere() {
   // # includes the last # excludes a middle
   {
     auto query = Cinq(five_elements).Where([](auto x) {return x != five_elements[3]; });
-    std::list<SpecialInt> result(five_elements.begin(), five_elements.end());
+    std::list<LifeTimeCheckInt> result(five_elements.begin(), five_elements.end());
     result.remove_if([](auto x) { return x == five_elements[3]; });
 
     auto vtr = query.ToVector();
@@ -361,4 +369,3 @@ void TestCinqToVector() {
 } // namespace cinq_test
 
 #endif // ENABLE_TEST
-

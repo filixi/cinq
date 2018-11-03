@@ -11,8 +11,8 @@
 #include <functional>
 
 #include "query-generator.h"
-#include "cinq-v3.h"
-using cinq_v3::Cinq;
+#include "cinq.h"
+using cinq::Cinq;
 
 namespace cinq_test {
 

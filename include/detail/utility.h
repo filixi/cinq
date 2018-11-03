@@ -5,8 +5,7 @@
 #include <memory>
 #include <type_traits>
 
-namespace cinq {
-namespace utility {
+namespace cinq::utility {
 template <class T>
 struct remove_reference_wrapper : std::false_type { using type = T; };
 template <class T>
@@ -187,87 +186,7 @@ struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_compara
   const T &ref_;
 };
 
-template <class T>
-struct VisitTupleTree {
-  template <class Node, class Visitor, class LeafVisitor>
-  static void Visit(Node &&node, Visitor &&, LeafVisitor &&leaf_visitor) {
-    std::invoke(std::forward<LeafVisitor>(leaf_visitor), std::forward<Node>(node));
-  }
-};
-
-template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
-void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>);
-
-template <class... Ts>
-struct VisitTupleTree<std::tuple<Ts...>> {
-  template <class Node, class Visitor, class LeafVisitor>
-  static void Visit(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor) {
-    std::invoke(std::forward<Visitor>(visitor), std::forward<Node>(node));
-    VisitChild(std::forward<Node>(node), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor), std::index_sequence_for<Ts...>{});
-  }
-};
-
-template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
-void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>) {
-  (VisitTupleTree<std::decay_t<std::tuple_element_t<indexs, std::decay_t<Node>>>>::Visit(
-    std::get<indexs>(std::forward<Node>(node)), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor)), ...);
-}
-
-} // namespace utility
-
-} // namespace cinq
-
-namespace cinq_test {
-struct SpecialInt {
-  SpecialInt(int v) noexcept : value_(v) {}
-
-  SpecialInt(const SpecialInt &v) noexcept : value_(v.value_) { assert(v.is_valid_); }
-  SpecialInt(SpecialInt &&v) noexcept : value_(v.value_) { assert(v.is_valid_); v.is_valid_ = false; }
-
-  ~SpecialInt() noexcept { assert(!is_destoryed_); is_valid_ = false; is_destoryed_ = true; }
-
-  SpecialInt &operator=(const SpecialInt &v) noexcept {
-    assert(v.is_valid_ && !is_destoryed_);
-
-    value_ = v.value_;
-    is_valid_ = true;
-    return *this;
-  }
-  SpecialInt &operator=(SpecialInt &&v) noexcept {
-    assert(v.is_valid_ && !is_destoryed_);
-    v.is_valid_ = false;
-
-    value_ = v.value_;
-    is_valid_ = true;
-    return *this;
-  }
-
-  operator int &() noexcept {
-    assert(is_valid_);
-    return value_;
-  }
-  operator const int &() const noexcept {
-    assert(is_valid_);
-    return value_;
-  }
-
-  bool operator<(const int &rhs) const noexcept {
-    return int(*this) < rhs;
-  }
-  bool operator==(const int &rhs) const noexcept {
-    return int(*this) == rhs;
-  }
-
-  int value_;
-  bool is_valid_ = true;
-  bool is_destoryed_ = false;
-};
-
-const std::vector<SpecialInt> empty_source;
-const std::vector<SpecialInt> one_element{ 0 };
-const std::vector<SpecialInt> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
-
-} // namespace cinq_test
+} // namespace cinq::utility
 
 namespace std {
 template <class T>
@@ -277,8 +196,5 @@ struct hash<cinq::utility::ReferenceWrapper<T>> {
   }
   std::hash<std::decay_t<T>> h_;
 };
-
-template <>
-struct hash<cinq_test::SpecialInt> : hash<int> {};
 
 } // namespace std
