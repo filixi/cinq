@@ -35,3 +35,4 @@
 vs-unit-test/x64/*
 vs-unit-test/cinq/x64/*
 .vs
+.vscode
