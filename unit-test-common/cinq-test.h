@@ -28,7 +28,10 @@ namespace cinq_test {
 void CompileTimeValueCategoryTest();
 void RuntimeValueCategoryTest();
 
-void LifeTimeTest();
+void LifeTimeVtrTest();
+void LifeTimeRefVtrTest();
+void LifeTimeCRefVtrTest();
+void LifeTimeSharedPtrVtrTest();
 
 void IntersectTest();
 void UnionTest();

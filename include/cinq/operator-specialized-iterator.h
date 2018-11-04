@@ -437,6 +437,43 @@ public:
     }
   }
 
+  OperatorSpecializedIterator(const OperatorSpecializedIterator &rhs)
+    : Base(rhs), values_(rhs.values_), current_(rhs.current_ == rhs.values_.end() ? values_.end() : values_.find(*rhs.current_)) {}
+
+  OperatorSpecializedIterator(OperatorSpecializedIterator &&rhs) : Base(std::move(rhs)) {
+    if (rhs.current_ == rhs.values_.end()) {
+      values_ = std::move(rhs.values_);
+      current_ = values_.end();
+    } else {
+      auto node = rhs.values_.extract(rhs.current_);
+      values_ = std::move(rhs.values_);
+      current_ = values_.insert(std::move(node)).position;
+    }
+  }
+
+  OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &rhs) {
+    Base::operator=(rhs);
+    values_ = rhs.values_;
+    if (rhs.current_ == rhs.values_.end())
+      current_ = values_.end();
+    else
+      current_ = values_.find(*rhs.current_);
+    return *this;
+  }
+
+  OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&rhs) {
+    Base::operator=(std::move(rhs));
+    if (rhs.current_ == rhs.values_.end()) {
+      values_ = std::move(rhs.values_);
+      current_ = values_.end();
+    } else {
+      auto node = rhs.values_.extract(rhs.current_);
+      values_ = std::move(rhs.values_);
+      current_ = values_.insert(std::move(node)).position;
+    }
+    return *this;
+  }
+
   ResultType operator*() const {
     return *current_;
   }
@@ -480,7 +517,7 @@ protected:
     std::unordered_set<InternalStorageType>, std::set<InternalStorageType>>;
 
   SetType values_;
-  typename SetType::iterator current_;
+  typename SetType::iterator current_ = values_.end();
 };
 
 template <bool ArgConstness, bool RetConstness, class TFn, class... TSources>
@@ -508,6 +545,44 @@ public:
 
       OperatorSpecializedIterator::FindNextValid();
     }
+  }
+
+  OperatorSpecializedIterator(const OperatorSpecializedIterator &rhs)
+    : Base(rhs), values_(rhs.values_), current_(rhs.current_ == rhs.values_.end() ? values_.end() : values_.find(rhs.current_->first)) {}
+
+  OperatorSpecializedIterator(OperatorSpecializedIterator &&rhs) : Base(std::move(rhs)) {
+    if (rhs.current_ == rhs.values_.end()) {
+      values_ = std::move(rhs.values_);
+      current_ = values_.end();
+    } else {
+      auto node = rhs.values_.extract(rhs.current_);
+      values_ = std::move(rhs.values_);
+      current_ = values_.insert(std::move(node)).position;
+    }
+  }
+
+  OperatorSpecializedIterator &operator=(const OperatorSpecializedIterator &rhs) {
+    Base::operator=(rhs);
+    values_ = rhs.values_;
+    if (rhs.current_ == rhs.values_.end())
+      current_ = values_.end();
+    else
+      current_ = values_.find(rhs.current_->first);
+
+    return *this;
+  }
+
+  OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&rhs) {
+    Base::operator=(std::move(rhs));
+    if (rhs.current_ == rhs.values_.end()) {
+      values_ = std::move(rhs.values_);
+      current_ = values_.end();
+    } else {
+      auto node = rhs.values_.extract(rhs.current_);
+      values_ = std::move(rhs.values_);
+      current_ = values_.insert(std::move(node)).position;
+    }
+    return *this;
   }
 
   ResultType operator*() const {
@@ -556,7 +631,7 @@ protected:
     std::unordered_map<InternalStorageType, size_t>, std::map<InternalStorageType, size_t>>;
 
   MapType values_;
-  typename MapType::iterator current_;
+  typename MapType::iterator current_ = values_.end();
 };
 
 template <bool ArgConstness, bool RetConstness, class TFn, class... TSources>

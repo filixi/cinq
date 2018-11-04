@@ -112,7 +112,7 @@ public:
 
   template <class Source, class... Rest>
   auto Intersect(Source &&source, Rest&&... rest) && {
-    auto self = CinqImpl<ConstVersion>(std::move(root_)).Distinct();
+    auto self = std::move(*this).Distinct();
 
     using IntersectType = Enumerable<ConstVersion, OperatorType::Intersect, bool,
       decltype(self),
@@ -129,7 +129,7 @@ public:
 
   template <class Source, class... Rest>
   auto Union(Source &&source, Rest&&... rest) && {
-    auto self = CinqImpl<ConstVersion>(std::move(root_)).Distinct();
+    auto self = std::move(*this).Distinct();
 
     using UnionType = Enumerable<ConstVersion, OperatorType::Union, bool,
       decltype(self),

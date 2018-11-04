@@ -65,9 +65,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\unit-test-common\basic-combined-query-test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\unit-test-common\guarantee-test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
