@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 #include <memory>
 #include <type_traits>
 
@@ -22,11 +24,16 @@ template <class T>
 inline constexpr bool is_non_const_rvalue_reference_v = !std::is_const_v<std::remove_reference_t<T>> && std::is_rvalue_reference_v<T>;
 
 template <class T>
-struct remove_smart_ptr : std::false_type { using type = T; };
+struct remove_smart_ptr_impl : std::false_type { using type = T; };
 template <class T>
-struct remove_smart_ptr<std::shared_ptr<T>> : std::true_type { using type = T; };
+struct remove_smart_ptr_impl<std::shared_ptr<T>> : std::true_type { using type = T; };
 template <class T>
-struct remove_smart_ptr<std::unique_ptr<T>> : std::true_type { using type = T; };
+struct remove_smart_ptr_impl<std::unique_ptr<T>> : std::true_type { using type = T; };
+template <class T>
+struct remove_smart_ptr : remove_smart_ptr_impl<std::decay_t<T>> {
+  using type = std::conditional_t<remove_smart_ptr_impl<std::decay_t<T>>::value,
+    typename remove_smart_ptr_impl<std::decay_t<T>>::type, T>;
+};
 template <class T>
 using remove_smart_ptr_t = typename remove_smart_ptr<T>::type;
 template <class T>
@@ -47,9 +54,9 @@ template <class Fn, class... Args>
 inline constexpr bool is_callable_v = is_callable<Fn, Args...>(nullptr);
 
 template <class T, class = void>
-struct is_hashable : std::true_type {};
+struct is_hashable : std::false_type {};
 template <class T>
-struct is_hashable<T, std::void_t<std::hash<T>>> : std::false_type {};
+struct is_hashable<T, std::void_t<std::hash<T>>> : std::true_type {};
 template <class T>
 inline constexpr bool is_hashable_v = is_hashable<T>::value;
 
@@ -125,6 +132,160 @@ struct is_all_reference_to_same_cv : std::conditional_t<
 template <class... Args>
 inline constexpr bool is_all_reference_to_same_cv_v = is_all_reference_to_same_cv<Args...>::value;
 
+template <class... Args>
+struct is_all_reference_to_same : std::conjunction<is_all_same<std::decay_t<Args>...>, std::is_reference<Args>...> {};
+template <class... Args>
+inline constexpr bool is_all_reference_to_same_v = is_all_reference_to_same<Args...>::value;
+
+template <class T, class = void>
+struct is_less_than_comparable : std::false_type {};
+template <class T>
+struct is_less_than_comparable<T,
+  std::void_t<decltype(std::declval<const std::decay_t<T> &>() < std::declval<const std::decay_t<T> &>())>> : std::true_type {};
+template <class T>
+inline constexpr bool is_less_than_comparable_v = is_less_than_comparable<T>::value;
+
+template <class T, class = void>
+struct is_equal_comparable : std::false_type {};
+template <class T>
+struct is_equal_comparable<T,
+  std::void_t<decltype(std::declval<const std::decay_t<T> &>() == std::declval<const std::decay_t<T> &>())>> : std::true_type {};
+template <class T>
+inline constexpr bool is_equal_comparable_v = is_equal_comparable<T>::value;
+
+template <class T, class = void>
+struct ReferenceWrapper {
+  static_assert((std::void_t<T> *)nullptr, "T must be less than comparable, or hashable and equal comparable.");
+};
+
+template <class T>
+struct ReferenceWrapper<T, std::enable_if_t<!(is_hashable_v<T> && is_equal_comparable_v<T>) && is_less_than_comparable_v<T>, void>> {
+  static_assert(!std::is_reference_v<T>, "T must not be reference.");
+  static constexpr bool hash_version = false;
+
+  ReferenceWrapper(const T &t) : ref_(t) {}
+
+  friend decltype(auto) operator<(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
+    return lhs.ref_ < rhs.ref_;
+  }
+
+  operator const T &() const {
+    return ref_;
+  }
+
+  const T &ref_;
+};
+
+template <class T>
+struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_comparable_v<T>, void>> {
+  static_assert(!std::is_reference_v<T>, "T must not be reference.");
+  static constexpr bool hash_version = true;
+
+  ReferenceWrapper(const T &t) : ref_(t) {}
+
+  friend decltype(auto) operator==(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
+    return lhs.ref_ == rhs.ref_;
+  }
+
+  operator const T &() const {
+    return ref_;
+  }
+
+  const T &ref_;
+};
+
+template <class T>
+struct VisitTupleTree {
+  template <class Node, class Visitor, class LeafVisitor>
+  static void Visit(Node &&node, Visitor &&, LeafVisitor &&leaf_visitor) {
+    std::invoke(std::forward<LeafVisitor>(leaf_visitor), std::forward<Node>(node));
+  }
+};
+
+template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
+void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>);
+
+template <class... Ts>
+struct VisitTupleTree<std::tuple<Ts...>> {
+  template <class Node, class Visitor, class LeafVisitor>
+  static void Visit(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor) {
+    std::invoke(std::forward<Visitor>(visitor), std::forward<Node>(node));
+    VisitChild(std::forward<Node>(node), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor), std::index_sequence_for<Ts...>{});
+  }
+};
+
+template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
+void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>) {
+  (VisitTupleTree<std::decay_t<std::tuple_element_t<indexs, std::decay_t<Node>>>>::Visit(
+    std::get<indexs>(std::forward<Node>(node)), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor)), ...);
+}
+
 } // namespace utility
 
 } // namespace cinq
+
+namespace cinq_test {
+struct SpecialInt {
+  SpecialInt(int v) noexcept : value_(v) {}
+
+  SpecialInt(const SpecialInt &v) noexcept : value_(v.value_) { assert(v.is_valid_); }
+  SpecialInt(SpecialInt &&v) noexcept : value_(v.value_) { assert(v.is_valid_); v.is_valid_ = false; }
+
+  ~SpecialInt() noexcept { assert(!is_destoryed_); is_valid_ = false; is_destoryed_ = true; }
+
+  SpecialInt &operator=(const SpecialInt &v) noexcept {
+    assert(v.is_valid_ && !is_destoryed_);
+
+    value_ = v.value_;
+    is_valid_ = true;
+    return *this;
+  }
+  SpecialInt &operator=(SpecialInt &&v) noexcept {
+    assert(v.is_valid_ && !is_destoryed_);
+    v.is_valid_ = false;
+
+    value_ = v.value_;
+    is_valid_ = true;
+    return *this;
+  }
+
+  operator int &() noexcept {
+    assert(is_valid_);
+    return value_;
+  }
+  operator const int &() const noexcept {
+    assert(is_valid_);
+    return value_;
+  }
+
+  bool operator<(const int &rhs) const noexcept {
+    return int(*this) < rhs;
+  }
+  bool operator==(const int &rhs) const noexcept {
+    return int(*this) == rhs;
+  }
+
+  int value_;
+  bool is_valid_ = true;
+  bool is_destoryed_ = false;
+};
+
+const std::vector<SpecialInt> empty_source;
+const std::vector<SpecialInt> one_element{ 0 };
+const std::vector<SpecialInt> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
+
+} // namespace cinq_test
+
+namespace std {
+template <class T>
+struct hash<cinq::utility::ReferenceWrapper<T>> {
+  size_t operator()(const T &t) const noexcept(noexcept(h_(t))) {
+    return static_cast<size_t>(h_(t));
+  }
+  std::hash<std::decay_t<T>> h_;
+};
+
+template <>
+struct hash<cinq_test::SpecialInt> : hash<int> {};
+
+} // namespace std

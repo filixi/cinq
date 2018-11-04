@@ -22,6 +22,7 @@ template <bool ConstVersion, class TSource>
 struct EnumerableSource {
 public:
   static_assert(!is_enumerable_source_v<std::decay_t<TSource>>);
+  static_assert(!std::is_rvalue_reference_v<TSource>);
 
   using ConstResultIterator = decltype(std::cbegin(std::declval<cinq::utility::remove_smart_ptr_t<TSource> &>()));
   using ResultIterator = std::conditional_t<ConstVersion,
@@ -76,8 +77,12 @@ public:
     return end();
   }
 
-  friend TSource &&MoveSource(EnumerableSource &&source) {
-    return std::move(source.source_);
+  friend decltype(auto) MoveSource(EnumerableSource &&source) {
+    if constexpr (std::is_lvalue_reference_v<TSource>) {
+      return std::ref(source.source_);
+    } else {
+      return std::move(source.source_);
+    }
   }
 
 private:
