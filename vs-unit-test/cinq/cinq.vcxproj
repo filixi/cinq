@@ -19,22 +19,30 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="basic-combined-query-test.cpp" />
-    <ClCompile Include="cinq.cpp" />
-    <ClCompile Include="guarantee-test.cpp" />
-    <ClCompile Include="set-operation-test.cpp" />
-    <ClCompile Include="value-category-test.cpp" />
+    <ClInclude Include="..\..\include\cinq.h" />
+    <ClInclude Include="..\..\include\cinq\aggregated-functions.h" />
+    <ClInclude Include="..\..\include\cinq\cinq.h" />
+    <ClInclude Include="..\..\include\cinq\enumerable-source.h" />
+    <ClInclude Include="..\..\include\cinq\enumerable.h" />
+    <ClInclude Include="..\..\include\cinq\multi-enumerables-visitor.h" />
+    <ClInclude Include="..\..\include\cinq\operator-category.h" />
+    <ClInclude Include="..\..\include\cinq\operator-specialized-iterator.h" />
+    <ClInclude Include="..\..\include\detail\concept.h" />
+    <ClInclude Include="..\..\include\detail\utility.h" />
+    <ClInclude Include="..\..\unit-test-common\cinq-test-utility.h" />
+    <ClInclude Include="..\..\unit-test-common\cinq-test.h" />
+    <ClInclude Include="..\..\unit-test-common\query-generator.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\cinq\cinq-v3\aggregated-functions.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\cinq.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\enumerable-source.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\enumerable.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\operator-category.h" />
-    <ClInclude Include="..\..\cinq\cinq-v3\operator-specialized-iterator.h" />
-    <ClInclude Include="..\..\cinq\utility.h" />
-    <ClInclude Include="..\..\include\cinq-v3.h" />
-    <ClInclude Include="cinq-test.h" />
+    <ClCompile Include="..\..\unit-test-common\basic-combined-query-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\guarantee-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\life-time-cref-vtr-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\life-time-ref-vtr-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\life-time-shared-ptr-vtr-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\life-time-vtr-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\main.cpp" />
+    <ClCompile Include="..\..\unit-test-common\set-operation-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\value-category-test.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -96,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -107,7 +115,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -121,7 +129,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -139,7 +147,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

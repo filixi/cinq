@@ -1,13 +1,14 @@
 #include <any>
 #include <iostream>
 #include <iterator>
+#include <tuple>
 #include <utility>
 #include <vector>
 #include <string>
 #include <functional>
 
-#include "cinq-v3.h"
-using cinq_v3::Cinq;
+#include "cinq.h"
+using cinq::Cinq;
 
 namespace cinq_test {
 
@@ -38,7 +39,7 @@ struct ValueCategoryInfo {
   std::string ExprTypeConstness; // Const, NonConst
   std::string ExprValueCategory; // prvalue, xvalue, lvalue
 
-  // type info of the function object yield type 
+  // type info of the function object yield type
   std::string YieldConstness;
   std::string YieldValueCategory;
 
@@ -123,6 +124,9 @@ struct ValueCategoryInfo {
 
 template <class Ret>
 struct FakeConatiner {
+  FakeConatiner() = default;
+  explicit FakeConatiner(std::vector<ValueCategoryInfo> &) {}
+
   struct Iterator {
     bool operator==(const Iterator &rhs) const {return i == rhs.i;}
     bool operator!=(const Iterator &rhs) const {return i != rhs.i;}
@@ -185,7 +189,7 @@ struct ValueCategoryTestUnit {
   YieldQueryType AppendQuery(QueryType &&query_base, YieldQueryType (QueryType::*query)(Args...) &&, std::vector<ValueCategoryInfo> &info,
     const std::string &query_constness, const std::string &source_category) {
     std::vector<ValueCategoryInfo> local_info;
-    auto yield_query = (std::move(query_base).*query)(Args(local_info)...);
+    auto yield_query = (std::move(query_base).*query)(Args{local_info}...);
     yield_query.ToVector();
 
     using SourceYieldType = decltype(*std::begin(query_base));
@@ -236,48 +240,93 @@ struct ValueCategoryTestUnit {
   template <class TestInfo, class QueryType>
   void SingleTest(const TestInfo &test_info, QueryType &&query, std::string query_name) {
     std::vector<ValueCategoryInfo> info;
- 
+
     AppendQuery(std::move(query), std::get<0>(test_info), info, std::get<1>(test_info), std::get<2>(test_info));
+
+    AssertAllInfo(info.begin(), info.end());
+  }
+
+  template <class Func, class QueryType>
+  void SingleTest(Func func, const std::string &query_constness, const std::string &source_category, QueryType &&query, std::string query_name) {
+    std::vector<ValueCategoryInfo> info;
+
+    AppendQuery(std::move(query), func, info, query_constness, source_category);
 
     AssertAllInfo(info.begin(), info.end());
   }
 
   template <class Container>
   void TestSelectMany(Container container) {
-    using QueryType = decltype(Cinq(container));
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-    SingleTest(std::make_tuple(&QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>, "NonConst", "Iterator"), Cinq(container), "SelectMany");
-  
-    using ConstQueryType = decltype(Cinq(container).Const());
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
-    SingleTest(std::make_tuple(&ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    {
+      using QueryType = decltype(Cinq(container));
+      auto MFP_select_many_1 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>;
+      auto MFP_select_many_2 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>;
+      auto MFP_select_many_3 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>;
+      auto MFP_select_many_4 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>;
+      auto MFP_select_many_5 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>;
+      auto MFP_select_many_6 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>;
+
+      SingleTest(std::make_tuple(MFP_select_many_1, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_2, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_3, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_4, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_5, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_6, "NonConst", "Iterator"), Cinq(container), "SelectMany");
+    }
+
+    {
+      using ConstQueryType = decltype(Cinq(container).Const());
+      auto MFP_select_many_1 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>;
+      auto MFP_select_many_2 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>;
+      auto MFP_select_many_3 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>;
+      auto MFP_select_many_4 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>;
+      auto MFP_select_many_5 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>;
+      auto MFP_select_many_6 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>;
+
+      SingleTest(std::make_tuple(MFP_select_many_1, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_2, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_3, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_4, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_5, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+      SingleTest(std::make_tuple(MFP_select_many_6, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
+    }
   }
 
   template <class Container>
   void TestSelect(Container container) {
-    using QueryType = decltype(Cinq(container));
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<VCRetType, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const VCRetType, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<VCRetType &, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const VCRetType &, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<VCRetType &&, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-    SingleTest(std::make_tuple(&QueryType::template Select<FunctionObject<const VCRetType &&, true>>, "NonConst", "FunctionObject"), Cinq(container), "Select");
-  
-    using ConstQueryType = decltype(Cinq(container).Const());
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<VCRetType, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const VCRetType, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<VCRetType &, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const VCRetType &, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<VCRetType &&, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
-    SingleTest(std::make_tuple(&ConstQueryType::template Select<FunctionObject<const VCRetType &&, true>>, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    {
+      using QueryType = decltype(Cinq(container));
+      auto MFP_select1 = &QueryType::template Select<FunctionObject<VCRetType, true>>;
+      auto MFP_select2 = &QueryType::template Select<FunctionObject<const VCRetType, true>>;
+      auto MFP_select3 = &QueryType::template Select<FunctionObject<VCRetType &, true>>;
+      auto MFP_select4 = &QueryType::template Select<FunctionObject<const VCRetType &, true>>;
+      auto MFP_select5 = &QueryType::template Select<FunctionObject<VCRetType &&, true>>;
+      auto MFP_select6 = &QueryType::template Select<FunctionObject<const VCRetType &&, true>>;
+
+      SingleTest(std::make_tuple(MFP_select1, "NonConst", "FunctionObject"), Cinq(container), "Select");
+      SingleTest(std::make_tuple(MFP_select2, "NonConst", "FunctionObject"), Cinq(container), "Select");
+      SingleTest(std::make_tuple(MFP_select3, "NonConst", "FunctionObject"), Cinq(container), "Select");
+      SingleTest(std::make_tuple(MFP_select4, "NonConst", "FunctionObject"), Cinq(container), "Select");
+      SingleTest(std::make_tuple(MFP_select5, "NonConst", "FunctionObject"), Cinq(container), "Select");
+      SingleTest(std::make_tuple(MFP_select6, "NonConst", "FunctionObject"), Cinq(container), "Select");
+    }
+
+    {
+      using ConstQueryType = decltype(Cinq(container).Const());
+      auto MFP_select1 = &ConstQueryType::template Select<FunctionObject<VCRetType, true>>;
+      auto MFP_select2 = &ConstQueryType::template Select<FunctionObject<const VCRetType, true>>;
+      auto MFP_select3 = &ConstQueryType::template Select<FunctionObject<VCRetType &, true>>;
+      auto MFP_select4 = &ConstQueryType::template Select<FunctionObject<const VCRetType &, true>>;
+      auto MFP_select5 = &ConstQueryType::template Select<FunctionObject<VCRetType &&, true>>;
+      auto MFP_select6 = &ConstQueryType::template Select<FunctionObject<const VCRetType &&, true>>;
+
+      SingleTest(std::make_tuple(MFP_select1, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+      SingleTest(std::make_tuple(MFP_select2, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+      SingleTest(std::make_tuple(MFP_select3, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+      SingleTest(std::make_tuple(MFP_select4, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+      SingleTest(std::make_tuple(MFP_select5, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+      SingleTest(std::make_tuple(MFP_select6, "Const", "FunctionObject"), Cinq(container).Const(), "Select");
+    }
   }
 
   template <class Selector1Ret, class Selector2Ret, class Selector3Ret, bool QueryConstness, class Container, class BasicQuery>
@@ -300,7 +349,7 @@ struct ValueCategoryTestUnit {
       [&ret2, &info](auto &&x) -> Selector2Ret {
           PopulateInfo<decltype(x)>(info);
           ValueCategoryInfo::FillSourceInfo<ContainerYieldType>(info.back(), "Iterator");
-          return static_cast<Selector2Ret>(ret2); 
+          return static_cast<Selector2Ret>(ret2);
         },
 
       [&ret3, &info](auto &&x, auto &&y) -> Selector3Ret {
@@ -349,7 +398,7 @@ struct ValueCategoryTestUnit {
     TestJoinImpl<VCRetType, VCRetType, VCRetType &&, false>(container, Cinq(container));
     TestJoinImpl<VCRetType, VCRetType, const VCRetType &&, false>(container, Cinq(container));
 
-
+    // ---------------------------------------------------------------------------------------------------------
 
     TestJoinImpl<VCRetType, VCRetType, VCRetType, true>(container, Cinq(container).Const());
     // TestJoinImpl<const VCRetType, VCRetType, VCRetType, true>(container, Cinq(container).Const());
@@ -380,25 +429,45 @@ struct ValueCategoryTestUnit {
     TestSelect(container);
     TestJoin(container);
 
-    using QueryType = decltype(Cinq(container));
-    SingleTest(std::make_tuple(&QueryType::template Where<FunctionObject<bool, false>>, "NonConst", "Iterator"), Cinq(container), "Where");
-    SingleTest(std::make_tuple(&QueryType::template Intersect<Container>, "NonConst", "Internal"), Cinq(container), "Intersect");
-    SingleTest(std::make_tuple(&QueryType::template Intersect<Container, Container>, "NonConst", "Internal"), Cinq(container), "Intersect");
-    SingleTest(std::make_tuple(&QueryType::template Union<Container>, "NonConst", "Internal"), Cinq(container), "Union");
-    SingleTest(std::make_tuple(&QueryType::template Union<Container, Container>, "NonConst", "Internal"), Cinq(container), "Union");
-    SingleTest(std::make_tuple(&QueryType::template Concat<Container>, "NonConst", "Iterator"), Cinq(container), "Concat");
-    SingleTest(std::make_tuple(&QueryType::template Concat<Container, Container>, "NonConst", "Iterator"), Cinq(container), "Concat");
-    SingleTest(std::make_tuple(&QueryType::Distinct, "NonConst", "Iterator"), Cinq(container), "Distinct");
+    {
+      using QueryType = std::decay_t<decltype(Cinq(container))>;
+      auto MFP_where = &QueryType::template Where<FunctionObject<bool, false>>;
+      auto MFP_intersect1 = &QueryType::template Intersect<Container>;
+      auto MFP_intersect2 = &QueryType::template Intersect<Container, Container>;
+      auto MFP_union1 = &QueryType::template Union<Container>;
+      auto MFP_union2 = &QueryType::template Union<Container, Container>;
+      auto MFP_concat1 = &QueryType::template Concat<Container>;
+      auto MFP_concat2 = &QueryType::template Concat<Container, Container>;
 
-    using ConstQueryType = decltype(Cinq(container).Const());
-    SingleTest(std::make_tuple(&ConstQueryType::template Where<FunctionObject<bool, false>>, "Const", "Iterator"), Cinq(container).Const(), "Where");
-    SingleTest(std::make_tuple(&ConstQueryType::template Intersect<Container>, "Const", "Internal"), Cinq(container).Const(), "Intersect");
-    SingleTest(std::make_tuple(&ConstQueryType::template Intersect<Container, Container>, "Const", "Internal"), Cinq(container).Const(), "Intersect");
-    SingleTest(std::make_tuple(&ConstQueryType::template Union<Container>, "Const", "Internal"), Cinq(container).Const(), "Union");
-    SingleTest(std::make_tuple(&ConstQueryType::template Union<Container, Container>, "Const", "Internal"), Cinq(container).Const(), "Union");
-    SingleTest(std::make_tuple(&ConstQueryType::template Concat<Container>, "Const", "Iterator"), Cinq(container).Const(), "Concat");
-    SingleTest(std::make_tuple(&ConstQueryType::template Concat<Container, Container>, "Const", "Iterator"), Cinq(container).Const(), "Concat");
-    SingleTest(std::make_tuple(&ConstQueryType::Distinct, "Const", "Iterator"), Cinq(container).Const(), "Distinct");
+      SingleTest(std::make_tuple(MFP_where, "NonConst", "Iterator"), Cinq(container), "Where");
+      SingleTest(std::make_tuple(MFP_intersect1, "NonConst", "Internal"), Cinq(container), "Intersect");
+      SingleTest(std::make_tuple(MFP_intersect2, "NonConst", "Internal"), Cinq(container), "Intersect");
+      SingleTest(std::make_tuple(MFP_union1, "NonConst", "Internal"), Cinq(container), "Union");
+      SingleTest(std::make_tuple(MFP_union2, "NonConst", "Internal"), Cinq(container), "Union");
+      SingleTest(std::make_tuple(MFP_concat1, "NonConst", "Iterator"), Cinq(container), "Concat");
+      SingleTest(std::make_tuple(MFP_concat2, "NonConst", "Iterator"), Cinq(container), "Concat");
+      SingleTest(std::make_tuple(&QueryType::Distinct, "NonConst", "Iterator"), Cinq(container), "Distinct");
+    }
+
+    {
+      using ConstQueryType = decltype(Cinq(container).Const());
+      auto MFP_where = &ConstQueryType::template Where<FunctionObject<bool, false>>;
+      auto MFP_intersect1 = &ConstQueryType::template Intersect<Container>;
+      auto MFP_intersect2 = &ConstQueryType::template Intersect<Container, Container>;
+      auto MFP_union1 = &ConstQueryType::template Union<Container>;
+      auto MFP_union2 = &ConstQueryType::template Union<Container, Container>;
+      auto MFP_concat1 = &ConstQueryType::template Concat<Container>;
+      auto MFP_concat2 = &ConstQueryType::template Concat<Container, Container>;
+
+      SingleTest(std::make_tuple(MFP_where, "Const", "Iterator"), Cinq(container).Const(), "Where");
+      SingleTest(std::make_tuple(MFP_intersect1, "Const", "Internal"), Cinq(container).Const(), "Intersect");
+      SingleTest(std::make_tuple(MFP_intersect2, "Const", "Internal"), Cinq(container).Const(), "Intersect");
+      SingleTest(std::make_tuple(MFP_union1, "Const", "Internal"), Cinq(container).Const(), "Union");
+      SingleTest(std::make_tuple(MFP_union2, "Const", "Internal"), Cinq(container).Const(), "Union");
+      SingleTest(std::make_tuple(MFP_concat1, "Const", "Iterator"), Cinq(container).Const(), "Concat");
+      SingleTest(std::make_tuple(MFP_concat2, "Const", "Iterator"), Cinq(container).Const(), "Concat");
+      SingleTest(std::make_tuple(&ConstQueryType::Distinct, "Const", "Iterator"), Cinq(container).Const(), "Distinct");
+    }
   }
 
   void Test() {
@@ -500,7 +569,7 @@ void CompileTimeValueCategoryTest() {
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query);
     }
   }
-  
+
   // SelectMany
   {
     {

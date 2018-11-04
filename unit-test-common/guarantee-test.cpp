@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include <cinq-v3.h>
-using namespace cinq_v3;
+#include <cinq.h>
+using cinq::Cinq;
 
 namespace cinq_test {
 // TODO : add test case for other containers
@@ -17,8 +17,8 @@ void NoCopyGuaranteeTest()
     CopyDetector(const CopyDetector &) { ++GetCounter().copy_counter_; }
     CopyDetector(CopyDetector &&) noexcept { ++GetCounter().move_counter_; }
 
-    CopyDetector &operator=(const CopyDetector &) { ++GetCounter().copy_counter_; }
-    CopyDetector &operator=(CopyDetector &&) { ++GetCounter().move_counter_; }
+    CopyDetector &operator=(const CopyDetector &) { ++GetCounter().copy_counter_; return *this; }
+    CopyDetector &operator=(CopyDetector &&) { ++GetCounter().move_counter_; return *this; }
 
     bool operator<(const CopyDetector &rhs) const {
       return this < &rhs;
@@ -39,10 +39,12 @@ void NoCopyGuaranteeTest()
   };
 
   auto reset_counter = [&x = CopyDetector::GetCounter()]() { x.ctor_counter_ = x.copy_counter_ = x.move_counter_ = 0; };
-  auto print_counter = [&x = CopyDetector::GetCounter()]() { std::cout << x.ctor_counter_ << ", " << x.copy_counter_ << ", " << x.move_counter_ << std::endl; };
+  // auto print_counter = [&x = CopyDetector::GetCounter()]() { std::cout << x.ctor_counter_ << ", " << x.copy_counter_ << ", " << x.move_counter_ << std::endl; };
   auto test_query = [&](auto &&query) {
       reset_counter();
-      for (auto &&x : query) x;
+      volatile uintptr_t dummy = 0;
+      for (auto &&x : query)
+        dummy += reinterpret_cast<uintptr_t>(&x);
       auto &x = CopyDetector::GetCounter();
       assert(x.ctor_counter_ == 0 && x.copy_counter_ == 0 && x.move_counter_ == 0);
     };
@@ -145,7 +147,7 @@ void SetOperationAliasTest() {
   std::vector<int> vtr{1,2,3};
   auto svtr = std::make_shared<std::vector<int>>(std::vector{1, 2, 3});
   auto uvtr = std::make_unique<std::vector<int>>(std::vector{1, 2, 3});
-  
+
   // ref
   auto address_of = [](const auto &e) { return &e; };
   auto address = Cinq<int>().Concat(std::ref(vtr), svtr, std::ref(uvtr)).Select(address_of).ToSet();

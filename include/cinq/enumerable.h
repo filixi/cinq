@@ -1,13 +1,16 @@
 #pragma once
 
+#include <cstddef>
+#include <type_traits>
+#include <tuple>
+#include <variant>
+
+#include "detail/concept.h"
 #include "enumerable-source.h"
 #include "operator-category.h"
 #include "operator-specialized-iterator.h"
-#include "../utility.h"
 
-#include <variant>
-
-namespace cinq_v3::detail {
+namespace cinq::detail {
 template <bool ConstVersion, class TEnumerable>
 class Cinq;
 
@@ -18,13 +21,13 @@ struct is_cinq<Cinq<ConstVersion, TE>> : std::true_type {};
 template <class T>
 inline constexpr bool is_cinq_v = is_cinq<T>::value;
 
-template <bool ConstVersion, EnumerableCategory Category, OperatorType Operator, class TFn, class... TSources>
+template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>
 class Enumerable;
 
 template <class>
-class is_enumerable : std::false_type {};
-template <bool ConstVersion, EnumerableCategory Category, OperatorType Operator, class TFn, class... TSources>
-class is_enumerable<Enumerable<ConstVersion, Category, Operator, TFn, TSources...>> : std::true_type {};
+struct is_enumerable : std::false_type {};
+template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>
+struct is_enumerable<Enumerable<ConstVersion, Operator, TFn, TSources...>> : std::true_type {};
 template <class T>
 inline constexpr bool is_enumerable_v = is_enumerable<T>::value;
 
@@ -91,7 +94,7 @@ public:
   constexpr size_t SourcesSize() const { return 0; }
 };
 
-template <EnumerableCategory Category, OperatorType Operator, class TFn, class... TSources>
+template <OperatorType Operator, class TFn, class... TSources>
 class BasicEnumerable : protected MultipleSources<TSources...> {
 protected:
   friend class OperatorSpecializedIterator<true, true, BasicEnumerable>;
@@ -109,8 +112,8 @@ public:
     : MultipleSources<TSources...>(std::move(sources)...), fn_(std::forward<Fn>(fn)) {}
 
   template <bool ArgConstness, bool RetConstness>
-  class Iterator : public OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Category, Operator, TFn, TSources...>> {
-    using base = OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Category, Operator, TFn, TSources...>>;
+  class Iterator : public OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Operator, TFn, TSources...>> {
+    using base = OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Operator, TFn, TSources...>>;
   public:
     Iterator() {}
 
@@ -137,9 +140,9 @@ private:
   mutable TFn fn_;
 };
 
-template <bool ConstVersion, EnumerableCategory Category, OperatorType Operator, class TFn, class... TSources>
-class Enumerable : private BasicEnumerable<Category, Operator, TFn, TSources...> {
-  using base = BasicEnumerable<Category, Operator, TFn, TSources...>;
+template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>
+class Enumerable : private BasicEnumerable<Operator, TFn, TSources...> {
+  using base = BasicEnumerable<Operator, TFn, TSources...>;
 public:
   template <class Fn>
   Enumerable(Fn &&fn, TSources&&... sources)
@@ -165,4 +168,4 @@ public:
   }
 };
 
-} // namespace cinq_v3::detail
+} // namespace cinq::detail

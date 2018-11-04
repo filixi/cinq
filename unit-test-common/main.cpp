@@ -1,6 +1,3 @@
-// Cinq.cpp : Defines the entry point for the console application.
-//
-
 //
 // Unit test for semantics
 //  - const reference guarante (if applies)
@@ -101,7 +98,7 @@ int main() try {
   threads.emplace_back(cinq_test::TestCinqInitialization);
   threads.emplace_back(cinq_test::CompileTimeValueCategoryTest);
   threads.emplace_back(cinq_test::RuntimeValueCategoryTest);
-  
+
   threads.emplace_back(cinq_test::LifeTimeTest);
 
   threads.emplace_back(cinq_test::NoCopyGuaranteeTest);

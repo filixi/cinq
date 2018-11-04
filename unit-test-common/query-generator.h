@@ -1,17 +1,14 @@
-#include <any>
-#include <deque>
-#include <forward_list>
-#include <iostream>
-#include <iterator>
+#pragma once
+
+#include <cassert>
+
+#include <tuple>
 #include <memory>
 #include <utility>
-#include <vector>
-#include <numeric>
-#include <string>
-#include <functional>
 
-#include "cinq-v3.h"
-using cinq_v3::Cinq;
+#include "cinq.h"
+#include "cinq-test-utility.h"
+using cinq::Cinq;
 
 namespace cinq_test {
 template <class T>
@@ -49,7 +46,6 @@ auto QueryAppendor(std::tuple<SQuerys...> squerys, Predicate predicate, std::tup
   return QueryAppendorImpl(squerys, predicate, selectors, std::index_sequence_for<SQuerys...>{});
 }
 
-// hash combine copied from boost
 inline void hash_combine_impl(std::uint64_t& h, std::uint64_t k) {
   const std::uint64_t m = static_cast<uint64_t>(0xc6a4a7935bd1e995);
   const int r = 47;
@@ -80,22 +76,13 @@ void BasicCombinedQueryTest(T source) {
   
   const size_t last_hash = 0xde24b45c4e881882;
   size_t hash = 0;
-  cinq::utility::VisitTupleTree<decltype(appended)>::Visit(
+  VisitTupleTree<decltype(appended)>::Visit(
       appended, [](auto &&) {}, [&hash](auto &&query) {
           for (auto x : *query)
             hash_combine_impl(hash, x);
         }
     );
   assert(last_hash == hash);
-}
-
-void LifeTimeTest() {
-  std::vector<SpecialInt> vtr{1, 1, 2, 2, 3, 11 ,13 ,15 ,17};
-
-  BasicCombinedQueryTest(vtr);
-  BasicCombinedQueryTest(std::ref(vtr));
-  BasicCombinedQueryTest(std::cref(vtr));
-  BasicCombinedQueryTest(std::make_shared<decltype(vtr)>(vtr));
 }
 
 } // namespace cinq_test

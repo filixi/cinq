@@ -1,14 +1,21 @@
-Cinq is a header only, modern C++ library. This library has no third-party dependency.
+Cinq (C++ inline query) is a header only, modern C++ library with no third-party dependency.
 
-This project planned to provide identical API and functionality in lastest successive two C++ standards(currently C++17 and C++14).
+This library is inspired by Linq of C#. It will provide similar APIs and functionalities as Linq and PLinq along with extensions and adapations to meet best-practices of modern C++.
 
-It will consist of multiple mostly interchangebale versions. The internal implementation will be largly different across different versions, but the API and functionality will be mostly identical.
+This project plans to provide identical API and functionality in lastest successive two C++ standards (currently C++17 and C++14), and focuses on easy-to-use and performance.
 
-V1 doesn't support lazy evaluation, but with the best error message when something goes wrong and the most intuitive internal implementation.
-Only a little template is used in V1, thus stepping through it is more pleasant than the other versions.
+The first relase will require C++17 to compile. (If we are lazy enough, C++14 might never get supported :P)
 
-V2 will use type erasure to support lazy evaluation, thus it comes with the overhead of virtual function call. It will also use more templates internally comparing to V1. Stepping through cinq-v2 during debugging will thus requires more efforts.
+The following cinq version is provided:
 
-V3 is basically V2 but without using type erasure. It is armed heavily with templates. It will support lazy evalution and multipass.
+Cinq - default to VCinqEx
 
-The first release will be only V3 and likely V1, and will require C++17 to compile.
+CinqEx - full template version, minimum run-time overhead, maximum compile-time overhead(CPU, memory, disk).
+SCinq - Slim version, no lazy-evaluation
+VCinq - Virtual version, no type information is preserved, maximum run-time overhead, minimum compile-time overhead.
+VCinqEx - Virtual version with some type information preserved, moderate run-time overhead, moderate compile-time overhead.
+PCinq - Parallel Cinq using VCinqEx.
+PCinqEx - Parallel Cinq using Cinq
+
+Warning:
+Building the test in non parallel mode requires 6Gib memory and 2Gib disk space.

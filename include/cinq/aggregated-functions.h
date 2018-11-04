@@ -3,7 +3,7 @@
 #include <tuple>
 #include <type_traits>
 
-namespace cinq_v3{
+namespace cinq::detail {
 template <class... TFns>
 struct AggregatedFunctions {
   AggregatedFunctions(std::tuple<TFns...> &&fns) : fns_(std::move(fns)) {}
@@ -68,4 +68,4 @@ auto CreateAggregatedFunctions() {
   return AggregatedFunctions<>();
 }
 
-} // namespace cinq_v3
+} // namespace cinq::detail

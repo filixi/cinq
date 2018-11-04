@@ -5,8 +5,7 @@
 #include <memory>
 #include <type_traits>
 
-namespace cinq {
-namespace utility {
+namespace cinq::utility {
 template <class T>
 struct remove_reference_wrapper : std::false_type { using type = T; };
 template <class T>
@@ -45,13 +44,6 @@ constexpr bool right_fold_and() {
 }
 template <bool... value>
 inline constexpr bool right_fold_and_v = right_fold_and<value...>();
-
-template <class Fn, class... Args>
-constexpr bool is_callable(std::invoke_result_t<Fn, Args...> *) { return true; }
-template <class Fn, class... Args>
-constexpr bool is_callable(...) { return false; }
-template <class Fn, class... Args>
-inline constexpr bool is_callable_v = is_callable<Fn, Args...>(nullptr);
 
 template <class T, class = void>
 struct is_hashable : std::false_type {};
@@ -155,7 +147,8 @@ inline constexpr bool is_equal_comparable_v = is_equal_comparable<T>::value;
 
 template <class T, class = void>
 struct ReferenceWrapper {
-  static_assert((std::void_t<T> *)nullptr, "T must be less than comparable, or hashable and equal comparable.");
+  template <class> static constexpr bool FakeFalse() { return false; }
+  static_assert(FakeFalse<T>(), "T must be less than comparable, or hashable and equal comparable.");
 };
 
 template <class T>
@@ -194,98 +187,15 @@ struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_compara
   const T &ref_;
 };
 
-template <class T>
-struct VisitTupleTree {
-  template <class Node, class Visitor, class LeafVisitor>
-  static void Visit(Node &&node, Visitor &&, LeafVisitor &&leaf_visitor) {
-    std::invoke(std::forward<LeafVisitor>(leaf_visitor), std::forward<Node>(node));
-  }
-};
-
-template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
-void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>);
-
-template <class... Ts>
-struct VisitTupleTree<std::tuple<Ts...>> {
-  template <class Node, class Visitor, class LeafVisitor>
-  static void Visit(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor) {
-    std::invoke(std::forward<Visitor>(visitor), std::forward<Node>(node));
-    VisitChild(std::forward<Node>(node), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor), std::index_sequence_for<Ts...>{});
-  }
-};
-
-template <class Node, class Visitor, class LeafVisitor, size_t... indexs>
-void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std::index_sequence<indexs...>) {
-  (VisitTupleTree<std::decay_t<std::tuple_element_t<indexs, std::decay_t<Node>>>>::Visit(
-    std::get<indexs>(std::forward<Node>(node)), std::forward<Visitor>(visitor), std::forward<LeafVisitor>(leaf_visitor)), ...);
-}
-
-} // namespace utility
-
-} // namespace cinq
-
-namespace cinq_test {
-struct SpecialInt {
-  SpecialInt(int v) noexcept : value_(v) {}
-
-  SpecialInt(const SpecialInt &v) noexcept : value_(v.value_) { assert(v.is_valid_); }
-  SpecialInt(SpecialInt &&v) noexcept : value_(v.value_) { assert(v.is_valid_); v.is_valid_ = false; }
-
-  ~SpecialInt() noexcept { assert(!is_destoryed_); is_valid_ = false; is_destoryed_ = true; }
-
-  SpecialInt &operator=(const SpecialInt &v) noexcept {
-    assert(v.is_valid_ && !is_destoryed_);
-
-    value_ = v.value_;
-    is_valid_ = true;
-    return *this;
-  }
-  SpecialInt &operator=(SpecialInt &&v) noexcept {
-    assert(v.is_valid_ && !is_destoryed_);
-    v.is_valid_ = false;
-
-    value_ = v.value_;
-    is_valid_ = true;
-    return *this;
-  }
-
-  operator int &() noexcept {
-    assert(is_valid_);
-    return value_;
-  }
-  operator const int &() const noexcept {
-    assert(is_valid_);
-    return value_;
-  }
-
-  bool operator<(const int &rhs) const noexcept {
-    return int(*this) < rhs;
-  }
-  bool operator==(const int &rhs) const noexcept {
-    return int(*this) == rhs;
-  }
-
-  int value_;
-  bool is_valid_ = true;
-  bool is_destoryed_ = false;
-};
-
-const std::vector<SpecialInt> empty_source;
-const std::vector<SpecialInt> one_element{ 0 };
-const std::vector<SpecialInt> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
-
-} // namespace cinq_test
+} // namespace cinq::utility
 
 namespace std {
 template <class T>
 struct hash<cinq::utility::ReferenceWrapper<T>> {
+  std::hash<std::decay_t<T>> h_;
   size_t operator()(const T &t) const noexcept(noexcept(h_(t))) {
     return static_cast<size_t>(h_(t));
   }
-  std::hash<std::decay_t<T>> h_;
 };
-
-template <>
-struct hash<cinq_test::SpecialInt> : hash<int> {};
 
 } // namespace std
