@@ -42,9 +42,9 @@ void NoCopyGuaranteeTest()
   // auto print_counter = [&x = CopyDetector::GetCounter()]() { std::cout << x.ctor_counter_ << ", " << x.copy_counter_ << ", " << x.move_counter_ << std::endl; };
   auto test_query = [&](auto &&query) {
       reset_counter();
-      volatile int dummy = 0;
+      volatile uintptr_t dummy = 0;
       for (auto &&x : query)
-        dummy += reinterpret_cast<const int *>(&x) - &dummy;
+        dummy += reinterpret_cast<uintptr_t>(&x);
       auto &x = CopyDetector::GetCounter();
       assert(x.ctor_counter_ == 0 && x.copy_counter_ == 0 && x.move_counter_ == 0);
     };
