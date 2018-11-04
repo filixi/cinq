@@ -147,7 +147,8 @@ inline constexpr bool is_equal_comparable_v = is_equal_comparable<T>::value;
 
 template <class T, class = void>
 struct ReferenceWrapper {
-  static_assert((std::void_t<T> *)nullptr, "T must be less than comparable, or hashable and equal comparable.");
+  template <class> static constexpr bool FakeFalse() { return false; }
+  static_assert(FakeFalse<T>(), "T must be less than comparable, or hashable and equal comparable.");
 };
 
 template <class T>
@@ -191,10 +192,10 @@ struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_compara
 namespace std {
 template <class T>
 struct hash<cinq::utility::ReferenceWrapper<T>> {
+  std::hash<std::decay_t<T>> h_;
   size_t operator()(const T &t) const noexcept(noexcept(h_(t))) {
     return static_cast<size_t>(h_(t));
   }
-  std::hash<std::decay_t<T>> h_;
 };
 
 } // namespace std

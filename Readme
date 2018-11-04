@@ -16,3 +16,6 @@ VCinq - Virtual version, no type information is preserved, maximum run-time over
 VCinqEx - Virtual version with some type information preserved, moderate run-time overhead, moderate compile-time overhead.
 PCinq - Parallel Cinq using VCinqEx.
 PCinqEx - Parallel Cinq using Cinq
+
+Warning:
+Building the test in non parallel mode requires 6Gib memory and 2Gib disk space.

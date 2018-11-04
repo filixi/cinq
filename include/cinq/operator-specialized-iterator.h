@@ -94,7 +94,7 @@ public:
 
     BeginIterator &operator=(const BeginIterator &) = default;
     BeginIterator &operator=(BeginIterator &&) = default;
-  
+
     BeginIterator &operator++() override {
       ++produced_first_;
 
@@ -338,10 +338,10 @@ private:
 
   bool is_past_the_end_iteratorator_ = false;
 
-  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::end(enumerable_->GetSource<0>()) : std::begin(enumerable_->GetSource<0>());
+  SourceIterator first_ = is_past_the_end_iteratorator_ ? std::end(enumerable_->template GetSource<0>()) : std::begin(enumerable_->template GetSource<0>());
 
-  SourceIterator2 first2_ = std::begin(enumerable_->GetSource<1>());
-  SourceIterator2 last2_ = std::end(enumerable_->GetSource<1>());
+  SourceIterator2 first2_ = std::begin(enumerable_->template GetSource<1>());
+  SourceIterator2 last2_ = std::end(enumerable_->template GetSource<1>());
 };
 
 template <bool ArgConstness, bool RetConstness, class TFn, class TSource>
@@ -564,7 +564,7 @@ class OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Op
   : public MultiVisitorSetIterator<IteratorTupleVisitor, ArgConstness, OperatorType::Concat, TFn, TSources...> {
 public:
   using Base = MultiVisitorSetIterator<IteratorTupleVisitor, ArgConstness, OperatorType::Concat, TFn, TSources...>;
-  
+
   using CommonType = typename Base::AdjustedCommonType;
 
   using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, CommonType, cinq::utility::SourceType::Iterator>;

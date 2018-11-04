@@ -25,9 +25,9 @@ template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources
 class Enumerable;
 
 template <class>
-class is_enumerable : std::false_type {};
+struct is_enumerable : std::false_type {};
 template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>
-class is_enumerable<Enumerable<ConstVersion, Operator, TFn, TSources...>> : std::true_type {};
+struct is_enumerable<Enumerable<ConstVersion, Operator, TFn, TSources...>> : std::true_type {};
 template <class T>
 inline constexpr bool is_enumerable_v = is_enumerable<T>::value;
 

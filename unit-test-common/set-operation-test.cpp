@@ -11,8 +11,6 @@ using cinq::Cinq;
 namespace cinq_test {
 
 void IntersectTest() {
-  auto copy_forward = [](auto x) {return x; };
-
   std::vector<LifeTimeCheckInt> source1, source2, source3;
 
   auto source_from_int = [](LifeTimeCheckInt x) {
@@ -86,8 +84,6 @@ void IntersectTest() {
 }
 
 void UnionTest() {
-  auto copy_forward = [](auto x) {return x; };
-
   std::vector<LifeTimeCheckInt> source1, source2, source3;
 
   auto source_from_int = [](LifeTimeCheckInt x) {

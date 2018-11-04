@@ -7,6 +7,7 @@
 #include <forward_list>
 #include <iostream>
 #include <iterator>
+#include <list>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -92,7 +93,7 @@ void TestCinqSelectMany() {
   {
     auto query = Cinq(empty_source).SelectMany([](auto) {return std::vector<LifeTimeCheckInt>{}; });
     assert(
-      query.ToVector().size() == 0 && 
+      query.ToVector().size() == 0 &&
       query.ToVector().size() == 0
     );
   }

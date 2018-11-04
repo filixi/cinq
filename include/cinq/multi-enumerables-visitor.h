@@ -12,6 +12,25 @@ namespace cinq::detail {
 template <OperatorType Operator, class TFn, class... TSources>
 class BasicEnumerable;
 
+template <size_t depth>
+struct Visitor {
+  template <class Ret, class Fn, class... ResultIterator>
+  static Ret Visit(Fn &&fn, size_t target, std::tuple<ResultIterator...> &first, std::tuple<ResultIterator...> &last)  {
+    if (depth - 1 == target)
+      return std::invoke(std::forward<Fn>(fn), std::get<depth - 1>(first), std::get<depth - 1>(last));
+    return Visitor<depth - 1>::template Visit<Ret>(std::forward<Fn>(fn), target, first, last);
+  }
+};
+
+template <>
+struct Visitor<static_cast<size_t>(0)> {
+  template <class Ret, class Fn, class... ResultIterator>
+  static Ret Visit(Fn &&, size_t, std::tuple<ResultIterator...> &, std::tuple<ResultIterator...> &) {
+    throw std::runtime_error("Round robin visitor internal failure");
+    // return std::invoke(std::forward<Fn>(fn), std::get<0>(first), std::get<0>(last));
+  }
+};
+
 template <bool ArgConstness, class... TSources>
 class RoundRobinIteratorTupleVisitor {
   template <size_t... index>
@@ -71,25 +90,6 @@ public:
   }
 
 private:
-  template <size_t depth>
-  struct Visitor {
-    template <class Ret, class Fn>
-    static Ret Visit(Fn &&fn, size_t target, std::tuple<typename TSources::ResultIterator...> &first, std::tuple<typename TSources::ResultIterator...> &last)  {
-      if (depth - 1 == target)
-        return std::invoke(std::forward<Fn>(fn), std::get<depth - 1>(first), std::get<depth - 1>(last));
-      return Visitor<depth - 1>::template Visit<Ret>(std::forward<Fn>(fn), target, first, last);
-    }
-  };
-
-  template <>
-  struct Visitor<0> {
-    template <class Ret, class Fn>
-    static Ret Visit(Fn &&, size_t, std::tuple<typename TSources::ResultIterator...> &, std::tuple<typename TSources::ResultIterator...> &) {
-      throw std::runtime_error("Round robin visitor internal failure");
-      // return std::invoke(std::forward<Fn>(fn), std::get<0>(first), std::get<0>(last));
-    }
-  };
-
   std::tuple<typename TSources::ResultIterator...> first_;
   std::tuple<typename TSources::ResultIterator...> last_;
   bool is_touched_[sizeof...(TSources)] = {0};
@@ -98,32 +98,38 @@ private:
   bool is_dereferenceable_ = false;
 };
 
+template <size_t depth>
+struct EmplaceIteratorWrapper {
+  template <class IteratorTupleVisitor, class... TSources>
+  static bool EmplaceIteratorAt(std::tuple<TSources...> &enumerables, size_t index, IteratorTupleVisitor *p) {
+    if (index + 1 == depth) {
+      p->first_.template emplace<depth-1>(std::begin(std::get<depth-1>(enumerables)));
+      p->last_.template emplace<depth-1>(std::end(std::get<depth-1>(enumerables)));
+      return true;
+    }
+    return EmplaceIteratorWrapper<depth-1>::EmplaceIteratorAt(enumerables, index, p);
+  }
+};
+
+template <>
+struct EmplaceIteratorWrapper<0> {
+  template <class IteratorTupleVisitor, class... TSources>
+  static bool EmplaceIteratorAt(const std::tuple<TSources...> &, size_t, IteratorTupleVisitor *) {
+    return false;
+  }
+};
+
 template <bool ArgConstness, class... TSources>
 class IteratorTupleVisitor {
-  template <size_t depth = sizeof...(TSources)>
-  struct EmplaceIteratorWrapper {
-    static bool EmplaceIteratorAt(std::tuple<TSources...> &enumerables, size_t index, IteratorTupleVisitor *p) {
-      if (index + 1 == depth) {
-        p->first_.template emplace<depth-1>(std::begin(std::get<depth-1>(enumerables)));
-        p->last_.template emplace<depth-1>(std::end(std::get<depth-1>(enumerables)));
-        return true;
-      }
-      return EmplaceIteratorWrapper<depth-1>::EmplaceIteratorAt(enumerables, index, p);
-    }
-  };
-
-  template <>
-  struct EmplaceIteratorWrapper<0> {
-    static bool EmplaceIteratorAt(const std::tuple<TSources...> &, size_t, IteratorTupleVisitor *) {
-      return false;
-    }
-  };
+  template <size_t depth>
+  friend struct EmplaceIteratorWrapper;
+  using EmplaceIteratorWrapperT = EmplaceIteratorWrapper<sizeof...(TSources)>;
 
 public:
   IteratorTupleVisitor() {}
 
   IteratorTupleVisitor(std::tuple<TSources...> &enumerable) {
-    bool has_value = EmplaceIteratorWrapper<>::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
+    bool has_value = EmplaceIteratorWrapperT::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
 
     auto is_end = [](auto &lhs, auto &rhs) -> bool {
       if constexpr (std::is_same_v<decltype(lhs), decltype(rhs)>)
@@ -133,7 +139,7 @@ public:
     };
 
     while (has_value && std::visit(is_end, first_, last_))
-      has_value = EmplaceIteratorWrapper<>::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
+      has_value = EmplaceIteratorWrapperT::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
     is_dereferenceable_ = has_value;
   }
 
@@ -159,7 +165,7 @@ public:
 
     bool has_value = true;
     while (has_value && std::visit(is_end, first_, last_))
-      has_value = EmplaceIteratorWrapper<>::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
+      has_value = EmplaceIteratorWrapperT::EmplaceIteratorAt(enumerable, current_enumerable_++, this);
 
     return is_dereferenceable_ = has_value;
   }

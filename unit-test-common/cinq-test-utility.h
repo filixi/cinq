@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cassert>
+#include <functional>
+#include <utility>
+#include <vector>
 
 namespace cinq_test {
 template <class T>
