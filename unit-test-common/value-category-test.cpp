@@ -134,18 +134,22 @@ struct FakeConatiner {
     Iterator operator++(int) { Iterator x; x.i = i++; return x;}
     Ret operator*() {
       if constexpr (std::is_reference_v<Ret>)
-        return static_cast<Ret>(x);
+        return static_cast<Ret>(GetX());
       else
         return {};
     }
     Ret operator*() const {
       if constexpr (std::is_reference_v<Ret>)
-        return static_cast<Ret>(x);
+        return static_cast<Ret>(GetX());
       else
         return {};
     }
     int i = 0;
-    mutable std::decay_t<Ret> x;
+
+    static std::decay_t<Ret> &GetX() {
+      static std::decay_t<Ret> x;
+      return x;
+    }
   };
 
   Iterator begin() {return {};}
@@ -440,13 +444,13 @@ struct ValueCategoryTestUnit {
       auto MFP_concat2 = &QueryType::template Concat<Container, Container>;
 
       SingleTest(std::make_tuple(MFP_where, "NonConst", "Iterator"), Cinq(container), "Where");
+      SingleTest(std::make_tuple(&QueryType::Distinct, "NonConst", "Internal"), Cinq(container), "Distinct");
       SingleTest(std::make_tuple(MFP_intersect1, "NonConst", "Internal"), Cinq(container), "Intersect");
       SingleTest(std::make_tuple(MFP_intersect2, "NonConst", "Internal"), Cinq(container), "Intersect");
       SingleTest(std::make_tuple(MFP_union1, "NonConst", "Internal"), Cinq(container), "Union");
       SingleTest(std::make_tuple(MFP_union2, "NonConst", "Internal"), Cinq(container), "Union");
       SingleTest(std::make_tuple(MFP_concat1, "NonConst", "Iterator"), Cinq(container), "Concat");
       SingleTest(std::make_tuple(MFP_concat2, "NonConst", "Iterator"), Cinq(container), "Concat");
-      SingleTest(std::make_tuple(&QueryType::Distinct, "NonConst", "Internal"), Cinq(container), "Distinct");
     }
 
     {
@@ -460,13 +464,13 @@ struct ValueCategoryTestUnit {
       auto MFP_concat2 = &ConstQueryType::template Concat<Container, Container>;
 
       SingleTest(std::make_tuple(MFP_where, "Const", "Iterator"), Cinq(container).Const(), "Where");
+      SingleTest(std::make_tuple(&ConstQueryType::Distinct, "Const", "Internal"), Cinq(container).Const(), "Distinct");
       SingleTest(std::make_tuple(MFP_intersect1, "Const", "Internal"), Cinq(container).Const(), "Intersect");
       SingleTest(std::make_tuple(MFP_intersect2, "Const", "Internal"), Cinq(container).Const(), "Intersect");
       SingleTest(std::make_tuple(MFP_union1, "Const", "Internal"), Cinq(container).Const(), "Union");
       SingleTest(std::make_tuple(MFP_union2, "Const", "Internal"), Cinq(container).Const(), "Union");
       SingleTest(std::make_tuple(MFP_concat1, "Const", "Iterator"), Cinq(container).Const(), "Concat");
       SingleTest(std::make_tuple(MFP_concat2, "Const", "Iterator"), Cinq(container).Const(), "Concat");
-      SingleTest(std::make_tuple(&ConstQueryType::Distinct, "Const", "Internal"), Cinq(container).Const(), "Distinct");
     }
   }
 

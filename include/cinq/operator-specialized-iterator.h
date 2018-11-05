@@ -709,7 +709,8 @@ public:
 
   OperatorSpecializedIterator(Enumerable *enumerable, bool is_past_the_end_iteratorator)
     : enumerable_(enumerable), is_past_the_end_iteratorator_(is_past_the_end_iteratorator) {
-    FindNextValideElement();
+    if (!is_past_the_end_iteratorator)
+      FindNextValideElement();
   }
 
   OperatorSpecializedIterator(const OperatorSpecializedIterator &) = default;
