@@ -429,10 +429,14 @@ public:
       // push the first element
       Base::visitor.Visit([this](auto &&x) {
         bool succeed = false;
-        if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          std::tie(current_, succeed) = values_.insert(std::forward<decltype(x)>(x));
-        else
+        if constexpr (std::is_convertible_v<decltype(x), value_type>) {
+          if constexpr (Base::is_all_reference_to_same)
+            std::tie(current_, succeed) = values_.insert(x);
+          else
+            std::tie(current_, succeed) = values_.insert(std::forward<decltype(x)>(x));
+        } else {
           std::tie(current_, succeed) = values_.insert(static_cast<const value_type &>(std::forward<decltype(x)>(x)));
+        }
       });
     }
   }
@@ -499,10 +503,14 @@ protected:
         break;
 
       Base::visitor.Visit([this, &succeed](auto &&x) {
-        if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          std::tie(current_, succeed) = values_.insert(std::forward<decltype(x)>(x));
-        else
+        if constexpr (std::is_convertible_v<decltype(x), value_type>) {
+          if constexpr (Base::is_all_reference_to_same)
+            std::tie(current_, succeed) = values_.insert(x);
+          else
+            std::tie(current_, succeed) = values_.insert(std::forward<decltype(x)>(x));
+        } else {
           std::tie(current_, succeed) = values_.insert(static_cast<const value_type &>(std::forward<decltype(x)>(x)));
+        }
       });
 
       if (succeed)
@@ -537,10 +545,14 @@ public:
     if (!is_past_the_end_iteratorator && Base::visitor.IsValid()) {
       // push the first element
       Base::visitor.Visit([this](auto &&x) {
-        if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          ++values_[std::forward<decltype(x)>(x)];
-        else
+        if constexpr (std::is_convertible_v<decltype(x), value_type>) {
+          if constexpr (Base::is_all_reference_to_same)
+            ++values_[x];
+          else
+            ++values_[std::forward<decltype(x)>(x)];
+        } else {
           ++values_[static_cast<const value_type &>(std::forward<decltype(x)>(x))];
+        }
       });
 
       OperatorSpecializedIterator::FindNextValid();
@@ -610,10 +622,14 @@ protected:
         break;
 
       Base::visitor.Visit([this, &succeed](auto &&x) {
-        if constexpr (std::is_convertible_v<decltype(x), value_type>)
-          succeed = ++values_[std::forward<decltype(x)>(x)] == sizeof...(TSources);
-        else
+        if constexpr (std::is_convertible_v<decltype(x), value_type>) {
+          if constexpr (Base::is_all_reference_to_same)
+            succeed = ++values_[x] == sizeof...(TSources);
+          else
+            succeed = ++values_[std::forward<decltype(x)>(x)] == sizeof...(TSources);
+        } else {
           succeed = ++values_[static_cast<const value_type &>(std::forward<decltype(x)>(x))] == sizeof...(TSources);
+        }
 
         if (succeed)
           current_ = values_.find(x);
@@ -686,7 +702,7 @@ public:
 
   using FunctionObjectArgumentType = cinq::utility::transform_to_function_object_argument_t<ArgConstness, SourceIteratorYieldType>;
 
-  using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, SourceIteratorYieldType, cinq::utility::SourceType::Iterator>;
+  using ResultType = cinq::utility::transform_to_result_type_t<RetConstness, SourceIteratorYieldType, cinq::utility::SourceType::InternalStorage>;
   using value_type = std::decay_t<ResultType>;
 
   OperatorSpecializedIterator() : first_(), last_() {}
@@ -703,7 +719,7 @@ public:
   OperatorSpecializedIterator &operator=(OperatorSpecializedIterator &&) = default;
 
   ResultType operator*() const {
-    return *first_;
+    return distinct_helper_.Get();
   }
 
   friend bool operator!=(const OperatorSpecializedIterator &lhs, const OperatorSpecializedIterator &rhs) {
@@ -729,7 +745,7 @@ public:
 
 private:
   void FindNextValideElement() {
-    while (first_ != last_ && !distinct_helper_(static_cast<FunctionObjectArgumentType>(*first_)))
+    while (first_ != last_ && !distinct_helper_(*first_)) // what if *first return a temporary
       ++first_;
   }
 
@@ -738,18 +754,62 @@ private:
   bool is_past_the_end_iteratorator_ = false;
 
   class DistinctHelper {
-    using InternalStorageType = std::conditional_t<std::is_reference_v<ResultType>,
-      cinq::utility::ReferenceWrapper<value_type>,
-      value_type>;
-
   public:
-    bool operator()(const InternalStorageType &t) const { return distinct_set_.insert(t).second; };
+    DistinctHelper() = default;
+
+    DistinctHelper(const DistinctHelper &rhs)
+      : distinct_set_(rhs.distinct_set_), current_ (rhs.current_ == rhs.distinct_set_.end() ? distinct_set_.end() : distinct_set_.find(*rhs.current_)) {}
+    DistinctHelper(DistinctHelper &&rhs) {
+      if (rhs.current_ == rhs.distinct_set_.end()) {
+        distinct_set_ = std::move(rhs.distinct_set_);
+        current_ = distinct_set_.end();
+      } else {
+        auto node = rhs.distinct_set_.extract(rhs.current_);
+        distinct_set_ = std::move(rhs.distinct_set_);
+        current_ = distinct_set_.insert(std::move(node)).position;
+      }
+    }
+
+    DistinctHelper &operator=(const DistinctHelper &rhs) {
+      distinct_set_ = rhs.distinct_set_;
+      if (rhs.current_ == rhs.distinct_set_.end())
+        current_ = distinct_set_.end();
+      else
+        current_ = distinct_set_.find(*rhs.current_);
+      return *this;
+    }
+
+    DistinctHelper &operator=(DistinctHelper &&rhs) {
+      if (rhs.current_ == rhs.distinct_set_.end()) {
+        distinct_set_ = std::move(rhs.distinct_set_);
+        current_ = distinct_set_.end();
+      } else {
+        auto node = rhs.distinct_set_.extract(rhs.current_);
+        distinct_set_ = std::move(rhs.distinct_set_);
+        current_ = distinct_set_.insert(std::move(node)).position;
+      }
+      return *this;
+    }
+
+    bool operator()(const value_type &t) const {
+      auto ret = distinct_set_.insert(t);
+      current_ = ret.first;
+      return ret.second;
+    };
+
+    const auto &Get() const {
+      return *current_;
+    }
 
   private:
+    using InternalStorageType = std::conditional_t<std::is_reference_v<SourceIteratorYieldType>,
+      cinq::utility::ReferenceWrapper<value_type>, value_type>;
+
     using SetType = std::conditional_t<cinq::utility::ReferenceWrapper<value_type>::hash_version,
       std::unordered_set<InternalStorageType>,std::set<InternalStorageType>>;
 
     mutable SetType distinct_set_;
+    mutable typename SetType::iterator current_ = distinct_set_.end();
   } distinct_helper_;
 
   static_assert(concept::PredicateCheck<DistinctHelper, FunctionObjectArgumentType>(), "(Internal error) Bad predicate");

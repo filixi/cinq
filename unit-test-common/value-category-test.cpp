@@ -446,7 +446,7 @@ struct ValueCategoryTestUnit {
       SingleTest(std::make_tuple(MFP_union2, "NonConst", "Internal"), Cinq(container), "Union");
       SingleTest(std::make_tuple(MFP_concat1, "NonConst", "Iterator"), Cinq(container), "Concat");
       SingleTest(std::make_tuple(MFP_concat2, "NonConst", "Iterator"), Cinq(container), "Concat");
-      SingleTest(std::make_tuple(&QueryType::Distinct, "NonConst", "Iterator"), Cinq(container), "Distinct");
+      SingleTest(std::make_tuple(&QueryType::Distinct, "NonConst", "Internal"), Cinq(container), "Distinct");
     }
 
     {
@@ -466,7 +466,7 @@ struct ValueCategoryTestUnit {
       SingleTest(std::make_tuple(MFP_union2, "Const", "Internal"), Cinq(container).Const(), "Union");
       SingleTest(std::make_tuple(MFP_concat1, "Const", "Iterator"), Cinq(container).Const(), "Concat");
       SingleTest(std::make_tuple(MFP_concat2, "Const", "Iterator"), Cinq(container).Const(), "Concat");
-      SingleTest(std::make_tuple(&ConstQueryType::Distinct, "Const", "Iterator"), Cinq(container).Const(), "Distinct");
+      SingleTest(std::make_tuple(&ConstQueryType::Distinct, "Const", "Internal"), Cinq(container).Const(), "Distinct");
     }
   }
 
