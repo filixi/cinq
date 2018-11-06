@@ -18,4 +18,4 @@ PCinq - Parallel Cinq using VCinqEx.
 PCinqEx - Parallel Cinq using Cinq
 
 Warning:
-Building the test in non parallel mode requires 6Gib memory and 2Gib disk space.
+Depend on the settings, building the test in non parallel mode requires up to 6GiB memory and 10GiB disk space.

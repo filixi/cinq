@@ -34,7 +34,6 @@
     <ClInclude Include="..\..\unit-test-common\query-generator.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\unit-test-common\basic-combined-query-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\guarantee-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\life-time-cref-vtr-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\life-time-ref-vtr-test.cpp" />

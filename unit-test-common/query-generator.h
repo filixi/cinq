@@ -33,7 +33,8 @@ auto QueryGenerator(Query query, Predicate predicate, std::tuple<Selector...> se
     /*9*/SharedQuery(Cinq(query).Concat(query)),
     /*10*/SharedQuery(Cinq(query).Concat(query, query)),
     /*11*/SharedQuery(Cinq(query).Concat(query, query, query)),
-    /*12*/SharedQuery(Cinq(query).Distinct()));
+    /*12*/SharedQuery(Cinq(query).Distinct())
+    );
 }
 
 template <class... SQuerys, class Predicate, class... Selector, size_t... indexs>
@@ -73,7 +74,7 @@ void BasicCombinedQueryTest(T source) {
       [](const int &x) -> const int & {return x;},
       [](const int &x, const int &) -> const int & {return x;}
     ));
-  
+
   const size_t last_hash = 0xde24b45c4e881882;
   size_t hash = 0;
   VisitTupleTree<decltype(appended)>::Visit(
@@ -83,6 +84,44 @@ void BasicCombinedQueryTest(T source) {
         }
     );
   assert(last_hash == hash);
+
+  // iterator equality/inequality test
+  VisitTupleTree<decltype(appended)>::Visit(
+      appended, [](auto &&) {}, [](auto &&query) {
+          using iterator_type = decltype(query->begin());
+
+          std::vector<std::vector<iterator_type>> iterators;
+
+          iterators.emplace_back();
+          for (auto ite = query->begin(); ite!=query->end(); ++ite)
+            iterators.front().push_back(ite);
+          iterators.resize(iterators.front().size());
+
+          if (iterators.size() > 100u)
+            iterators.resize(100u);
+
+          for (size_t i=1; i<iterators.size(); ++i) {
+            iterators[i].resize(iterators.size());
+            for (size_t j=i; j<iterators.size(); ++j) {
+              iterators[i][j] = iterators[i-1][j-1];
+              ++iterators[i][j];
+            }
+          }
+
+          for (size_t i=0; i<iterators.size(); ++i) {
+            for (size_t j=i; j<iterators.size(); ++j) {
+              for (size_t m=0; m<iterators.size(); ++m) {
+                for (size_t n=m; n<iterators.size(); ++n) {
+                  if (j == n)
+                    assert(iterators[i][j] == iterators[m][n] && !(iterators[i][j] != iterators[m][n]));
+                  else
+                    assert(iterators[i][j] != iterators[m][n] && !(iterators[i][j] == iterators[m][n]));
+                }
+              }
+            }
+          }
+        }
+    );
 }
 
 } // namespace cinq_test

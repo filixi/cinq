@@ -88,6 +88,9 @@
 
 #include "cinq-test.h"
 
+#include "cinq.h"
+using cinq::Cinq;
+
 int main() try {
 
 #ifdef ENABLE_TEST
@@ -99,7 +102,10 @@ int main() try {
   threads.emplace_back(cinq_test::CompileTimeValueCategoryTest);
   threads.emplace_back(cinq_test::RuntimeValueCategoryTest);
 
-  threads.emplace_back(cinq_test::LifeTimeTest);
+  threads.emplace_back(cinq_test::LifeTimeVtrTest);
+  threads.emplace_back(cinq_test::LifeTimeRefVtrTest);
+  threads.emplace_back(cinq_test::LifeTimeCRefVtrTest);
+  threads.emplace_back(cinq_test::LifeTimeSharedPtrVtrTest);
 
   threads.emplace_back(cinq_test::NoCopyGuaranteeTest);
   threads.emplace_back(cinq_test::SetOperationInternalContainerTest);

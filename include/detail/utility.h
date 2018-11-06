@@ -145,9 +145,10 @@ struct is_equal_comparable<T,
 template <class T>
 inline constexpr bool is_equal_comparable_v = is_equal_comparable<T>::value;
 
+template <class> static constexpr bool FakeFalse() { return false; }
+
 template <class T, class = void>
 struct ReferenceWrapper {
-  template <class> static constexpr bool FakeFalse() { return false; }
   static_assert(FakeFalse<T>(), "T must be less than comparable, or hashable and equal comparable.");
 };
 
@@ -156,17 +157,20 @@ struct ReferenceWrapper<T, std::enable_if_t<!(is_hashable_v<T> && is_equal_compa
   static_assert(!std::is_reference_v<T>, "T must not be reference.");
   static constexpr bool hash_version = false;
 
-  ReferenceWrapper(const T &t) : ref_(t) {}
+  ReferenceWrapper(const T &t) : ref_(&t) {}
+  ReferenceWrapper(T &&) {
+    static_assert(FakeFalse<T>(), "Can not bind to temporary object.");
+  }
 
   friend decltype(auto) operator<(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
-    return lhs.ref_ < rhs.ref_;
+    return *lhs.ref_ < *rhs.ref_;
   }
 
   operator const T &() const {
-    return ref_;
+    return *ref_;
   }
 
-  const T &ref_;
+  const T *ref_;
 };
 
 template <class T>
@@ -174,17 +178,20 @@ struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_compara
   static_assert(!std::is_reference_v<T>, "T must not be reference.");
   static constexpr bool hash_version = true;
 
-  ReferenceWrapper(const T &t) : ref_(t) {}
+  ReferenceWrapper(const T &t) : ref_(&t) {}
+  ReferenceWrapper(T &&) {
+    static_assert(FakeFalse<T>(), "Can not bind to temporary object.");
+  }
 
   friend decltype(auto) operator==(const ReferenceWrapper &lhs, const ReferenceWrapper &rhs) {
-    return lhs.ref_ == rhs.ref_;
+    return *lhs.ref_ == *rhs.ref_;
   }
 
   operator const T &() const {
-    return ref_;
+    return *ref_;
   }
 
-  const T &ref_;
+  const T *ref_;
 };
 
 } // namespace cinq::utility
