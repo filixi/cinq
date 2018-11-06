@@ -36,6 +36,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\unit-test-common\guarantee-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\life-time-cref-vtr-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\life-time-iterator-storage-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\life-time-ref-vtr-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\life-time-shared-ptr-vtr-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\life-time-vtr-test.cpp" />

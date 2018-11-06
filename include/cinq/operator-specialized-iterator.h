@@ -98,7 +98,7 @@ public:
     BeginIterator &operator++() override {
       ++produced_first_;
 
-      while (produced_first_ == std::end(*produced_enumerable_)) {
+      while (produced_first_ == std::end(*produced_enumerable_vtr_.back())) {
         ++first_;
         if (first_ == last_)
           return *this;
@@ -129,9 +129,9 @@ public:
       if (iter == std::end(enumerable_->SourceFront()))
         return ;
 
-      produced_enumerable_ = std::make_shared<ProducedEnumerableHolder>(enumerable_->fn_(static_cast<FunctionObjectArgumentType>(*iter)));
-      produced_first_ = std::begin(*produced_enumerable_);
-      produced_last_ = std::end(*produced_enumerable_);
+      produced_enumerable_vtr_.push_back(std::make_shared<ProducedEnumerableHolder>(enumerable_->fn_(static_cast<FunctionObjectArgumentType>(*iter))));
+      produced_first_ = std::begin(*produced_enumerable_vtr_.back());
+      produced_last_ = std::end(*produced_enumerable_vtr_.back());
     }
 
     Enumerable *enumerable_;
@@ -139,7 +139,7 @@ public:
     SourceIterator first_ = std::begin(enumerable_->SourceFront());
     SourceIterator last_ = std::end(enumerable_->SourceFront());
 
-    std::shared_ptr<ProducedEnumerableHolder> produced_enumerable_;
+    std::vector<std::shared_ptr<ProducedEnumerableHolder>> produced_enumerable_vtr_;
     ProducedIterator produced_first_;
     ProducedIterator produced_last_;
   };

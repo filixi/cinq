@@ -1,21 +1,10 @@
 Cinq (C++ inline query) is a header only, modern C++ library with no third-party dependency.
 
-This library is inspired by Linq of C#. It will provide similar APIs and functionalities as Linq and PLinq along with extensions and adapations to meet best-practices of modern C++.
+This library is inspired by Linq of C#. It will provide similar APIs and functionalities as Linq and PLinq along with extensions and adaptations to meet best-practices of modern C++.
 
 This project plans to provide identical API and functionality in lastest successive two C++ standards (currently C++17 and C++14), and focuses on easy-to-use and performance.
 
-The first relase will require C++17 to compile. (If we are lazy enough, C++14 might never get supported :P)
-
-The following cinq version is provided:
-
-Cinq - default to VCinqEx
-
-CinqEx - full template version, minimum run-time overhead, maximum compile-time overhead(CPU, memory, disk).
-SCinq - Slim version, no lazy-evaluation
-VCinq - Virtual version, no type information is preserved, maximum run-time overhead, minimum compile-time overhead.
-VCinqEx - Virtual version with some type information preserved, moderate run-time overhead, moderate compile-time overhead.
-PCinq - Parallel Cinq using VCinqEx.
-PCinqEx - Parallel Cinq using Cinq
+The first relase will require C++17 to compile, and will only support a subset of the variations. (If we are lazy enough, C++14 might never get supported :P)
 
 Warning:
 Depend on the settings, building the test in non parallel mode requires up to 6GiB memory and 10GiB disk space.

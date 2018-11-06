@@ -106,6 +106,7 @@ int main() try {
   threads.emplace_back(cinq_test::LifeTimeRefVtrTest);
   threads.emplace_back(cinq_test::LifeTimeCRefVtrTest);
   threads.emplace_back(cinq_test::LifeTimeSharedPtrVtrTest);
+  threads.emplace_back(cinq_test::SelectManyAliasingTest);
 
   threads.emplace_back(cinq_test::NoCopyGuaranteeTest);
   threads.emplace_back(cinq_test::SetOperationInternalContainerTest);
