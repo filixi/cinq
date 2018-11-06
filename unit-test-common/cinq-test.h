@@ -32,6 +32,7 @@ void LifeTimeVtrTest();
 void LifeTimeRefVtrTest();
 void LifeTimeCRefVtrTest();
 void LifeTimeSharedPtrVtrTest();
+void SelectManyAliasingTest();
 
 void IntersectTest();
 void UnionTest();

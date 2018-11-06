@@ -5,7 +5,7 @@ LIB = -lpthread
 
 INCLUDE = -I ../include/ -I ../unit-test-common/
 
-OBJS = guarantee-test.o life-time-cref-vtr-test.o\
+OBJS = guarantee-test.o life-time-cref-vtr-test.o life-time-iterator-storage-test.o\
 	life-time-ref-vtr-test.o life-time-shared-ptr-vtr-test.o life-time-vtr-test.o\
 	set-operation-test.o value-category-test.o
 
