@@ -1,11 +1,11 @@
 CC = clang++
-FLAG = -std=c++17 -Wall -Werror -Wfatal-errors -Wno-parentheses -stdlib=libc++
+FLAG = -std=c++17 -stdlib=libc++ -Wall -Werror -Wfatal-errors -Wno-parentheses -pedantic
 
 LIB = -lpthread -lc++
 
 INCLUDE = -I ../include/ -I ../unit-test-common/
 
-OBJS = guarantee-test.o life-time-cref-vtr-test.o\
+OBJS = guarantee-test.o life-time-cref-vtr-test.o life-time-iterator-storage-test.o\
 	life-time-ref-vtr-test.o life-time-shared-ptr-vtr-test.o life-time-vtr-test.o\
 	set-operation-test.o value-category-test.o
 
