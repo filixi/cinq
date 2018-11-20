@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-
 #include <memory>
 #include <type_traits>
 
@@ -193,6 +191,11 @@ struct ReferenceWrapper<T, std::enable_if_t<is_hashable_v<T> && is_equal_compara
 
   const T *ref_;
 };
+
+inline void CinqAssert(bool value) {
+  if (!value)
+    throw std::runtime_error("Cinq assert failed.");
+}
 
 } // namespace cinq::utility
 

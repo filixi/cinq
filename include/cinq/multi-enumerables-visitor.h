@@ -9,7 +9,7 @@
 #include <variant>
 
 namespace cinq::detail {
-template <OperatorType Operator, class TFn, class... TSources>
+template <class QueryTag, class TFn, class... TSources>
 class BasicEnumerable;
 
 template <size_t depth>
@@ -188,12 +188,12 @@ private:
   bool is_dereferenceable_ = false;
 };
 
-template <template <bool, class...> class InternalVisitor, bool ArgConstness, OperatorType Operator, class TFn, class... TSources>
+template <template <bool, class...> class InternalVisitor, bool ArgConstness, class QueryTag, class TFn, class... TSources>
 class MultiVisitorSetIterator {
 public:
   static_assert(sizeof...(TSources) > 1);
 
-  using Enumerable = BasicEnumerable<Operator, TFn, TSources...>;
+  using Enumerable = BasicEnumerable<QueryTag, TFn, TSources...>;
 
   using IteratorYieldType = decltype(*std::declval<typename Enumerable::template SourceIterator<0>>());
   using CommonType = typename Enumerable::CommonType;

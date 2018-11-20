@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-
 #include <tuple>
 #include <memory>
 #include <utility>
@@ -18,7 +16,7 @@ auto SharedQuery(T &&query) {
 
 template <class Query, class Predicate, class... Selector>
 auto QueryGenerator(Query query, Predicate predicate, std::tuple<Selector...> selectors) {
-  assert(sizeof...(Selector) == 3);
+  cinq::utility::CinqAssert(sizeof...(Selector) == 3);
 
   return std::make_tuple(
     /*0*/SharedQuery(Cinq(query).Where(predicate)),
@@ -75,7 +73,7 @@ void BasicCombinedQueryTest(T source) {
       [](const int &x, const int &) -> const int & {return x;}
     ));
 
-  const size_t last_hash = 0xde24b45c4e881882;
+  const size_t last_hash = 0xfb77065490f024a2;
   size_t hash = 0;
   VisitTupleTree<decltype(appended)>::Visit(
       appended, [](auto &&) {}, [&hash](auto &&query) {
@@ -83,7 +81,7 @@ void BasicCombinedQueryTest(T source) {
             hash_combine_impl(hash, x);
         }
     );
-  assert(last_hash == hash);
+  cinq::utility::CinqAssert(last_hash == hash);
 
   // iterator equality/inequality test
   VisitTupleTree<decltype(appended)>::Visit(
@@ -113,9 +111,9 @@ void BasicCombinedQueryTest(T source) {
               for (size_t m=0; m<iterators.size(); ++m) {
                 for (size_t n=m; n<iterators.size(); ++n) {
                   if (j == n)
-                    assert(iterators[i][j] == iterators[m][n] && !(iterators[i][j] != iterators[m][n]));
+                    cinq::utility::CinqAssert(iterators[i][j] == iterators[m][n] && !(iterators[i][j] != iterators[m][n]));
                   else
-                    assert(iterators[i][j] != iterators[m][n] && !(iterators[i][j] == iterators[m][n]));
+                    cinq::utility::CinqAssert(iterators[i][j] != iterators[m][n] && !(iterators[i][j] == iterators[m][n]));
                 }
               }
             }

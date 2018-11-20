@@ -28,7 +28,7 @@ void SelectManyAliasingTest() {
       while (!iterators.empty()) {
         int t = *iterators.front();
         iterators.pop_front();
-        assert(t);
+        cinq::utility::CinqAssert(t);
       }
     };
 

@@ -1,5 +1,4 @@
 
-#include <cassert>
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -46,7 +45,7 @@ void NoCopyGuaranteeTest()
       for (auto &&x : query)
         dummy += reinterpret_cast<uintptr_t>(&x);
       auto &x = CopyDetector::GetCounter();
-      assert(x.ctor_counter_ == 0 && x.copy_counter_ == 0 && x.move_counter_ == 0);
+      cinq::utility::CinqAssert(x.ctor_counter_ == 0 && x.copy_counter_ == 0 && x.move_counter_ == 0);
     };
 
   std::vector<CopyDetector> vtr;
@@ -65,11 +64,11 @@ void NoCopyGuaranteeTest()
   test_query(Cinq(vtr).Where([](auto &&) {return true;}));
   test_query(Cinq(vtr).Select([](auto &&x) -> decltype(auto) {return x;}));
   test_query(Cinq(vtr).SelectMany([](auto &&){return std::vector<int>();}));
-  test_query(Cinq(vtr).Join(vtr, [](auto &&x) -> decltype(auto) {return x;}, [](auto &&x) -> decltype(auto) {return x;}, [](auto &&a, auto &&b) {return std::tie(a, b);}));
+  test_query(Cinq(vtr).Join(vtr, [](auto &&) -> decltype(auto) {return 1;}, [](auto &&) -> decltype(auto) {return 1;}, [](auto &&a, auto &&b) {return std::tie(a, b);}));
   test_query(Cinq(vtr).Where([](auto &) {return true;}));
   test_query(Cinq(vtr).Select([](auto &x) -> decltype(auto) {return x;}));
   test_query(Cinq(vtr).SelectMany([](auto &){return std::vector<int>();}));
-  test_query(Cinq(vtr).Join(vtr, [](auto &x) -> decltype(auto) {return x;}, [](auto &x) -> decltype(auto) {return x;}, [](auto &a, auto &b) {return std::tie(a, b);}));
+  test_query(Cinq(vtr).Join(vtr, [](auto &) -> decltype(auto) {return 1;}, [](auto &) -> decltype(auto) {return 1;}, [](auto &a, auto &b) {return std::tie(a, b);}));
 
   test_query(Cinq(vtr).Intersect(vtr));
   test_query(Cinq(vtr).Intersect(vtr, vtr));
@@ -90,11 +89,11 @@ void NoCopyGuaranteeTest()
   test_query(Cinq(svtr).Where([](auto &&) {return true;}));
   test_query(Cinq(svtr).Select([](auto &&x) -> decltype(auto) {return x;}));
   test_query(Cinq(svtr).SelectMany([](auto &&){return std::vector<int>();}));
-  test_query(Cinq(svtr).Join(svtr, [](auto &&x) -> decltype(auto) {return x;}, [](auto &&x) -> decltype(auto) {return x;}, [](auto &&a, auto &&b) {return std::tie(a, b);}));
+  test_query(Cinq(svtr).Join(svtr, [](auto &&) -> decltype(auto) {return 1;}, [](auto &&) -> decltype(auto) {return 1;}, [](auto &&a, auto &&b) {return std::tie(a, b);}));
   test_query(Cinq(svtr).Where([](auto &) {return true;}));
   test_query(Cinq(svtr).Select([](auto &x) -> decltype(auto) {return x;}));
   test_query(Cinq(svtr).SelectMany([](auto &){return std::vector<int>();}));
-  test_query(Cinq(svtr).Join(svtr, [](auto &x) -> decltype(auto) {return x;}, [](auto &x) -> decltype(auto) {return x;}, [](auto &a, auto &b) {return std::tie(a, b);}));
+  test_query(Cinq(svtr).Join(svtr, [](auto &) -> decltype(auto) {return 1;}, [](auto &) -> decltype(auto) {return 1;}, [](auto &a, auto &b) {return std::tie(a, b);}));
 
   test_query(Cinq(svtr).Intersect(svtr));
   test_query(Cinq(svtr).Intersect(svtr, svtr));
@@ -111,11 +110,11 @@ void NoCopyGuaranteeTest()
   test_query(Cinq(std::ref(uvtr)).Where([](auto &&) {return true;}));
   test_query(Cinq(std::ref(uvtr)).Select([](auto &&x) -> decltype(auto) {return x;}));
   test_query(Cinq(std::ref(uvtr)).SelectMany([](auto &&){return std::vector<int>();}));
-  test_query(Cinq(std::ref(uvtr)).Join(std::ref(uvtr), [](auto &&x) -> decltype(auto) {return x;}, [](auto &&x) -> decltype(auto) {return x;}, [](auto &&a, auto &&b) {return std::tie(a, b);}));
+  test_query(Cinq(std::ref(uvtr)).Join(std::ref(uvtr), [](auto &&) -> decltype(auto) {return 1;}, [](auto &&) -> decltype(auto) {return 1;}, [](auto &&a, auto &&b) {return std::tie(a, b);}));
   test_query(Cinq(std::ref(uvtr)).Where([](auto &) {return true;}));
   test_query(Cinq(std::ref(uvtr)).Select([](auto &x) -> decltype(auto) {return x;}));
   test_query(Cinq(std::ref(uvtr)).SelectMany([](auto &){return std::vector<int>();}));
-  test_query(Cinq(std::ref(uvtr)).Join(std::ref(uvtr), [](auto &x) -> decltype(auto) {return x;}, [](auto &x) -> decltype(auto) {return x;}, [](auto &a, auto &b) {return std::tie(a, b);}));
+  test_query(Cinq(std::ref(uvtr)).Join(std::ref(uvtr), [](auto &) -> decltype(auto) {return 1;}, [](auto &) -> decltype(auto) {return 1;}, [](auto &a, auto &b) {return std::tie(a, b);}));
 
   test_query(Cinq(std::ref(uvtr)).Intersect(std::ref(uvtr)));
   test_query(Cinq(std::ref(uvtr)).Intersect(std::ref(uvtr), std::ref(uvtr)));
@@ -186,7 +185,7 @@ void SetOperationAliasTest() {
       Cinq(svtr).Union(svtr, svtr)
     ).Select(address_of).ToSet();
 
-  assert(std::all_of(aliased_address.begin(), aliased_address.end(), [&address](auto x) { return address.insert(x).second == false; }));
+  cinq::utility::CinqAssert(std::all_of(aliased_address.begin(), aliased_address.end(), [&address](auto x) { return address.insert(x).second == false; }));
 }
 
 } // namespace cinq_test

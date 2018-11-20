@@ -1,9 +1,10 @@
 #pragma once
 
-#include <cassert>
 #include <functional>
 #include <utility>
 #include <vector>
+
+#include "detail/utility.h"
 
 namespace cinq_test {
 template <class T>
@@ -35,20 +36,20 @@ void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std:
 struct LifeTimeCheckInt {
   LifeTimeCheckInt(int v) noexcept : value_(v) {}
 
-  LifeTimeCheckInt(const LifeTimeCheckInt &v) noexcept : value_(v.value_) { assert(v.is_valid_); }
-  LifeTimeCheckInt(LifeTimeCheckInt &&v) noexcept : value_(v.value_) { assert(v.is_valid_); v.is_valid_ = false; }
+  LifeTimeCheckInt(const LifeTimeCheckInt &v) noexcept : value_(v.value_) { cinq::utility::CinqAssert(v.is_valid_); }
+  LifeTimeCheckInt(LifeTimeCheckInt &&v) noexcept : value_(v.value_) { cinq::utility::CinqAssert(v.is_valid_); v.is_valid_ = false; }
 
-  ~LifeTimeCheckInt() noexcept { assert(!is_destoryed_); is_valid_ = false; is_destoryed_ = true; }
+  ~LifeTimeCheckInt() noexcept { cinq::utility::CinqAssert(!is_destoryed_); is_valid_ = false; is_destoryed_ = true; }
 
   LifeTimeCheckInt &operator=(const LifeTimeCheckInt &v) noexcept {
-    assert(v.is_valid_ && !is_destoryed_);
+    cinq::utility::CinqAssert(v.is_valid_ && !is_destoryed_);
 
     value_ = v.value_;
     is_valid_ = true;
     return *this;
   }
   LifeTimeCheckInt &operator=(LifeTimeCheckInt &&v) noexcept {
-    assert(v.is_valid_ && !is_destoryed_);
+    cinq::utility::CinqAssert(v.is_valid_ && !is_destoryed_);
     v.is_valid_ = false;
 
     value_ = v.value_;
@@ -57,11 +58,11 @@ struct LifeTimeCheckInt {
   }
 
   operator int &() noexcept {
-    assert(is_valid_);
+    cinq::utility::CinqAssert(is_valid_);
     return value_;
   }
   operator const int &() const noexcept {
-    assert(is_valid_);
+    cinq::utility::CinqAssert(is_valid_);
     return value_;
   }
 
@@ -80,6 +81,16 @@ struct LifeTimeCheckInt {
 const std::vector<LifeTimeCheckInt> empty_source;
 const std::vector<LifeTimeCheckInt> one_element{ 0 };
 const std::vector<LifeTimeCheckInt> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
+
+template <class Query>
+auto ToVector(const Query &query) {
+  using IteratorType = decltype(std::begin(query));
+  using IteratorYieldType = decltype(*std::declval<IteratorType>());
+  std::vector<std::decay_t<IteratorYieldType>> vtr;
+  for (const auto &ele : query)
+    vtr.emplace_back(ele);
+  return vtr;
+}
 
 } // namespace cinq_test
 
