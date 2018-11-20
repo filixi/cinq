@@ -114,13 +114,13 @@ public:
   auto Intersect(Source &&source, Rest&&... rest) && {
     auto self = std::move(*this).Distinct();
 
-    using IntersectType = Enumerable<ConstVersion, OperatorType::Intersect, bool,
+    using IntersectType = Enumerable<ConstVersion, OperatorType::Intersect, void,
       decltype(self),
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct())>,
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())>...>;
 
     return Cinq<ConstVersion, IntersectType>(
-        false,
+        NoFunctionTag{},
         GetEnumerable(std::move(self)),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...
@@ -131,13 +131,13 @@ public:
   auto Union(Source &&source, Rest&&... rest) && {
     auto self = std::move(*this).Distinct();
 
-    using UnionType = Enumerable<ConstVersion, OperatorType::Union, bool,
+    using UnionType = Enumerable<ConstVersion, OperatorType::Union, void,
       decltype(self),
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct())>,
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())>...>;
 
     return Cinq<ConstVersion, UnionType>(
-        false,
+        NoFunctionTag{},
         GetEnumerable(std::move(self)),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...
@@ -146,11 +146,11 @@ public:
 
   template <class Source, class... Rest>
   auto Concat(Source &&sources, Rest&&... rest) && {
-    using ConcatType = Enumerable<ConstVersion, OperatorType::Concat, bool, TEnumerable, 
+    using ConcatType = Enumerable<ConstVersion, OperatorType::Concat, void, TEnumerable, 
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Source>(sources)))>,
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Rest>(rest)))>...>;
     return Cinq<ConstVersion, ConcatType>(
-        false,
+        NoFunctionTag{},
         std::move(root_),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Source>(sources))),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Rest>(rest)))...
@@ -158,9 +158,21 @@ public:
   }
 
   auto Distinct() && {
-    // TODO : use ReferenceWrapper when possible
-    using DistinctType = Enumerable<ConstVersion, OperatorType::Distinct, bool, TEnumerable>;
-    return Cinq<ConstVersion, DistinctType>(true, std::move(root_));
+    using DistinctType = Enumerable<ConstVersion, OperatorType::Distinct, void, TEnumerable>;
+    return Cinq<ConstVersion, DistinctType>(NoFunctionTag{}, std::move(root_));
+  }
+
+  // TODO : Add test case
+  template <class Pred>
+  bool All(Pred &&p) const {
+    bool result = true;
+    for (auto &&e : *this) {
+      static_assert(concept::PredicateCheck<Pred &&, decltype(e)>(), "Bad predicate");
+      if (!(result = result && std::invoke(std::forward<Pred>(p), std::forward<decltype(e)>(e))))
+        break;
+    }
+     
+    return result;
   }
  
   auto ToVector() {

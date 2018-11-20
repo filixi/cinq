@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 
+#include "cinq-test-utility.h"
 #include "cinq.h"
 using cinq::Cinq;
 
@@ -194,7 +195,7 @@ struct ValueCategoryTestUnit {
     const std::string &query_constness, const std::string &source_category) {
     std::vector<ValueCategoryInfo> local_info;
     auto yield_query = (std::move(query_base).*query)(Args{local_info}...);
-    yield_query.ToVector();
+    ToVector(yield_query);
 
     using SourceYieldType = decltype(*std::begin(query_base));
     for (auto &i : local_info) {
@@ -363,7 +364,7 @@ struct ValueCategoryTestUnit {
           ValueCategoryInfo::FillSourceInfo<Selector2Ret>(info.back(), "FunctionObject");
           return static_cast<Selector3Ret>(ret3);
         });
-    query.ToVector();
+    ToVector(query);
 
     info.push_back(ValueCategoryInfo::CreateExprInfo<decltype(*std::begin(query))>("IteratorRet"));
     info.back().IteartorConstness = "NonConst";
@@ -538,7 +539,7 @@ void CompileTimeValueCategoryTest() {
         NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::forward<decltype(x)>(x);
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -548,7 +549,7 @@ void CompileTimeValueCategoryTest() {
         CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::forward<decltype(x)>(x);
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -581,7 +582,7 @@ void CompileTimeValueCategoryTest() {
         NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::vector<int>();
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -591,7 +592,7 @@ void CompileTimeValueCategoryTest() {
         CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::vector<int>();
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -670,7 +671,7 @@ void CompileTimeValueCategoryTest() {
           NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return s;
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -687,7 +688,7 @@ void CompileTimeValueCategoryTest() {
           CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return std::tie(first, second);
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
@@ -704,7 +705,7 @@ void CompileTimeValueCategoryTest() {
           NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return std::tie(first, second);
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
@@ -721,7 +722,7 @@ void CompileTimeValueCategoryTest() {
           CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return std::tie(first, second);
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }

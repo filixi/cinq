@@ -81,6 +81,16 @@ const std::vector<LifeTimeCheckInt> empty_source;
 const std::vector<LifeTimeCheckInt> one_element{ 0 };
 const std::vector<LifeTimeCheckInt> five_elements{ 0, 1, 2, 3, 4 }; // elements must be unique
 
+template <class Query>
+auto ToVector(const Query &query) {
+  using IteratorType = decltype(std::begin(query));
+  using IteratorYieldType = decltype(*std::declval<IteratorType>());
+  std::vector<std::decay_t<IteratorYieldType>> vtr;
+  for (const auto &ele : query)
+    vtr.emplace_back(ele);
+  return vtr;
+}
+
 } // namespace cinq_test
 
 namespace std {

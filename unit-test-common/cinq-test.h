@@ -97,8 +97,8 @@ void TestCinqSelectMany() {
   {
     auto query = Cinq(empty_source).SelectMany([](auto) {return std::vector<LifeTimeCheckInt>{}; });
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
@@ -106,8 +106,8 @@ void TestCinqSelectMany() {
   {
     auto query = Cinq(one_element).SelectMany([](auto) {return std::vector<LifeTimeCheckInt>{}; });
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
@@ -115,20 +115,20 @@ void TestCinqSelectMany() {
   {
     auto query = Cinq(one_element).SelectMany([](auto x) {return std::vector<LifeTimeCheckInt>(1, x); });
     assert(
-      query.ToVector().size() == 1 && query.ToVector()[0] == 0 &&
-      query.ToVector().size() == 1 && query.ToVector()[0] == 0
+      ToVector(query).size() == 1 && ToVector(query)[0] == 0 &&
+      ToVector(query).size() == 1 && ToVector(query)[0] == 0
     );
   }
 
   // $ has five_elements # has multiple elements
   {
     auto query = Cinq(five_elements).SelectMany([](auto x) {return std::vector<LifeTimeCheckInt>(1, x); });
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(
       vtr.size() == five_elements.size() &&
       std::equal(vtr.begin(), vtr.begin(), five_elements.begin())
     );
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(
       vtr.size() == five_elements.size() &&
       std::equal(vtr.begin(), vtr.begin(), five_elements.begin())
@@ -141,19 +141,19 @@ void TestCinqSelect() {
   {
     auto query = Cinq(empty_source).Select([](auto) {return 0; });
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
   // $ has one element # has one element
   {
     auto query = Cinq(one_element).Select([](auto x) {return x; });
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(
       vtr.size() == 1 && vtr[0] == one_element[0]
     );
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(
       vtr.size() == 1 && vtr[0] == one_element[0]
     );
@@ -162,12 +162,12 @@ void TestCinqSelect() {
   // $ has five_elements # has multiple elements
   {
     auto query = Cinq(five_elements).Select([](auto x) {return x; });
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(
       vtr.size() == five_elements.size() &&
       std::equal(vtr.begin(), vtr.begin(), five_elements.begin())
     );
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(
       vtr.size() == five_elements.size() &&
       std::equal(vtr.begin(), vtr.begin(), five_elements.begin())
@@ -192,20 +192,20 @@ void TestCinqJoin() {
   {
     auto query = Cinq(empty_source).Join(empty_source, copy_forward, copy_forward, copy_forward);
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
   // $ has one element $ has one element # has one element
   {
     auto query = Cinq(one_element).Join(one_element, copy_forward, copy_forward, copy_forward);
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(
       vtr.size() == 1 &&
       vtr[0] == std::make_tuple(one_element[0], one_element[0])
     );
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(
       vtr.size() == 1 &&
       vtr[0] == std::make_tuple(one_element[0], one_element[0])
@@ -215,13 +215,13 @@ void TestCinqJoin() {
   // $ has five element $ has five element # has multiple elements
   {
     auto query = Cinq(five_elements).Join(five_elements, copy_forward, copy_forward, copy_forward);
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(
       vtr.size() == five_elements.size() * five_elements.size() &&
       vtr[0] == std::make_tuple(five_elements[0], five_elements[0]) &&
       vtr.back() == std::make_tuple(five_elements.back(), five_elements.back())
     );
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(
       vtr.size() == five_elements.size() * five_elements.size() &&
       vtr[0] == std::make_tuple(five_elements[0], five_elements[0]) &&
@@ -233,8 +233,8 @@ void TestCinqJoin() {
   {
     auto query = Cinq(empty_source).Join(one_element, copy_forward, copy_forward, copy_forward);
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
@@ -242,8 +242,8 @@ void TestCinqJoin() {
   {
     auto query = Cinq(one_element).Join(empty_source, copy_forward, copy_forward, copy_forward);
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
@@ -251,8 +251,8 @@ void TestCinqJoin() {
   {
     auto query = Cinq(empty_source).Join(five_elements, copy_forward, copy_forward, copy_forward);
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
@@ -260,21 +260,21 @@ void TestCinqJoin() {
   {
     auto query = Cinq(five_elements).Join(empty_source, copy_forward, copy_forward, copy_forward);
     assert(
-      query.ToVector().size() == 0 &&
-      query.ToVector().size() == 0
+      ToVector(query).size() == 0 &&
+      ToVector(query).size() == 0
     );
   }
 
   // $ has one element $ has five elements
   {
     auto query = Cinq(one_element).Join(five_elements, copy_forward, copy_forward, copy_forward);
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(
       vtr.size() == 5 &&
       vtr.front() == std::make_tuple(one_element.front(), five_elements.front()) &&
       vtr.back() == std::make_tuple(one_element.back(), five_elements.back())
     );
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(
       vtr.size() == 5 &&
       vtr.front() == std::make_tuple(one_element.front(), five_elements.front()) &&
@@ -285,13 +285,13 @@ void TestCinqJoin() {
   // $ has five elements $ has one element
   {
     auto query = Cinq(five_elements).Join(one_element, copy_forward, copy_forward, copy_forward);
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(
       vtr.size() == 5 &&
       vtr.front() == std::make_tuple(five_elements.front(), one_element.front()) &&
       vtr.back() == std::make_tuple(five_elements.back(), one_element.back())
     );
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(
       vtr.size() == 5 &&
       vtr.front() == std::make_tuple(five_elements.front(), one_element.front()) &&
@@ -303,13 +303,13 @@ void TestCinqJoin() {
 void TestCinqWhere() {
   // $ is empty
   {
-    auto query = Cinq(empty_source).Where([](auto) {return true; }).ToVector();
+    auto query = ToVector(Cinq(empty_source).Where([](auto) {return true; }));
     assert(query.size() == 0 && query.size() == 0);
   }
 
   // $ has one element # is empty
   {
-    auto query = Cinq(one_element).Where([](auto) {return false; }).ToVector();
+    auto query = ToVector(Cinq(one_element).Where([](auto) {return false; }));
     assert(query.size() == 0 && query.size() == 0);
   }
 
@@ -319,10 +319,10 @@ void TestCinqWhere() {
     std::deque<LifeTimeCheckInt> result(five_elements.begin(), five_elements.end());
     result.pop_front();
 
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(vtr.size() == result.size() &&
       std::equal(vtr.begin(), vtr.end(), result.begin()));
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(vtr.size() == result.size() &&
       std::equal(vtr.begin(), vtr.end(), result.begin()));
   }
@@ -333,10 +333,10 @@ void TestCinqWhere() {
     std::deque<LifeTimeCheckInt> result(five_elements.begin(), five_elements.end());
     result.pop_back();
 
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(vtr.size() == result.size() &&
       std::equal(vtr.begin(), vtr.end(), result.begin()));
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(vtr.size() == result.size() &&
       std::equal(vtr.begin(), vtr.end(), result.begin()));
   }
@@ -347,10 +347,10 @@ void TestCinqWhere() {
     std::list<LifeTimeCheckInt> result(five_elements.begin(), five_elements.end());
     result.remove_if([](auto x) { return x == five_elements[3]; });
 
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(vtr.size() == result.size() &&
       std::equal(vtr.begin(), vtr.end(), result.begin()));
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(vtr.size() == result.size() &&
       std::equal(vtr.begin(), vtr.end(), result.begin()));
   }
@@ -358,10 +358,10 @@ void TestCinqWhere() {
   // # includes all
   {
     auto query = Cinq(five_elements).Where([](auto) {return true; });
-    auto vtr = query.ToVector();
+    auto vtr = ToVector(query);
     assert(vtr.size() == five_elements.size() &&
       std::equal(vtr.begin(), vtr.end(), five_elements.begin()));
-    vtr = query.ToVector();
+    vtr = ToVector(query);
     assert(vtr.size() == five_elements.size() &&
       std::equal(vtr.begin(), vtr.end(), five_elements.begin()));
   }

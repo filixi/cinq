@@ -94,8 +94,23 @@ public:
   constexpr size_t SourcesSize() const { return 0; }
 };
 
+struct NoFunctionTag {};
+
+template <class Fn>
+struct FunctionHolder {
+  template <class T>
+  FunctionHolder(T &&fn) : fn_(std::forward<T>(fn)) {}
+
+  mutable Fn fn_;
+};
+
+template <>
+struct FunctionHolder<void> {
+  FunctionHolder(NoFunctionTag) {}
+};
+
 template <OperatorType Operator, class TFn, class... TSources>
-class BasicEnumerable : protected MultipleSources<TSources...> {
+class BasicEnumerable : protected MultipleSources<TSources...>, protected FunctionHolder<TFn> {
 protected:
   friend class OperatorSpecializedIterator<true, true, BasicEnumerable>;
   friend class OperatorSpecializedIterator<true, false, BasicEnumerable>;
@@ -109,7 +124,7 @@ protected:
 public:
   template <class Fn>
   BasicEnumerable(Fn &&fn, TSources&&... sources)
-    : MultipleSources<TSources...>(std::move(sources)...), fn_(std::forward<Fn>(fn)) {}
+    : MultipleSources<TSources...>(std::move(sources)...), FunctionHolder<TFn>(std::forward<Fn>(fn)) {}
 
   template <bool ArgConstness, bool RetConstness>
   class Iterator : public OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Operator, TFn, TSources...>> {
@@ -135,9 +150,6 @@ public:
     using pointer = std::add_pointer_t<typename base::value_type>;
     using iterator_category = std::input_iterator_tag;
   };
-
-private:
-  mutable TFn fn_;
 };
 
 template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>

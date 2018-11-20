@@ -8,3 +8,50 @@ The first relase will require C++17 to compile, and will only support a subset o
 
 Warning:
 Depend on the settings, building the test in non parallel mode requires up to 6GiB memory and 10GiB disk space.
+
+Query implementation status:
+Fully implemented:
+Distinct()
+Intersect(Enumerable<TSource>, ...)
+Join(Enumerable<TOuter>, [](TInner) -> )
+
+Need test case:
+All([](TSource) -> bool)
+
+Not implemented:
+Aggregate([](TSource, TSource) -> TSource)
+Aggregate(TAccumulate, [](TAccumulate, TSource) -> TAccumulate)
+Aggregate(TAccumulate, [](TAccumulate, TSource) -> TAccumulate, [](TAccumulate) -> TResult)
+Any() / Empty
+Any([](TSource) -> bool)
+Append(TSource)
+Average([](TSource) -> TResult)
+StaticCast<TResult>
+DynamicCast<TResult>
+ConstCast<TResult>
+ReinterpretCast<TResult>
+Contains(TSource)
+Count() / Size
+Count([](TSource) -> bool) / CountIf
+DefaultIfEmpty()
+DefaultIfEmpty(TSource)
+Distinct([](TSource, TSource) -> bool)
+ElementAt(size_t) / At
+ElementAtOrDefault(size_t)
+Except(Enumerable<TSource>)
+Except(Enumerable<TSource>, [](TSource, TSource) -> bool)
+First() / Front
+First([](TSource) -> bool)
+FirstOrDefault()
+FirstOrDefault([](TSource) -> bool)
+GroupBy([](TSource) -> TKey)
+GroupBy([](TSource) -> TKey, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult)
+GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
+GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult)
+GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult, [](TKey, TKey) -> bool)
+Intersect(Enumerable<TSource>, [](TSource, TSource) -> bool)

@@ -92,5 +92,8 @@
     <ClCompile Include="..\..\unit-test-common\life-time-iterator-storage-test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\long-query-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
