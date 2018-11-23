@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
+#include "../query-category.h"
 #include "detail/concept.h"
 #include "detail/utility.h"
-#include "query-category.h"
 #include "query-iterator-fwd.h"
 
 namespace cinq::detail {

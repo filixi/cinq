@@ -5,10 +5,10 @@
 #include <type_traits>
 #include <utility>
 
+#include "../multi-enumerables-visitor.h"
+#include "../query-category.h"
 #include "detail/concept.h"
 #include "detail/utility.h"
-#include "multi-enumerables-visitor.h"
-#include "query-category.h"
 #include "query-iterator-fwd.h"
 
 namespace cinq::detail {

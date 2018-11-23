@@ -98,8 +98,8 @@ struct NoFunctionTag {};
 
 template <class TupleFns>
 struct FunctionHolder {
-  template <class TupleFns>
-  FunctionHolder(TupleFns &&fns) : fns_(std::forward<TupleFns>(fns)) {}
+  template <class TupFns>
+  FunctionHolder(TupFns &&fns) : fns_(std::forward<TupFns>(fns)) {}
 
   auto &FirstFn() const {
     return std::get<0>(fns_);
