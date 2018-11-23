@@ -80,33 +80,41 @@ public:
 
   template <class Fn>
   auto Select(Fn fn) && {
-    using SelectType = Enumerable<ConstVersion, OperatorType::Select, Fn, TEnumerable>;
-    return Cinq<ConstVersion, SelectType>(std::move(fn), std::move(root_));
+    using SelectType = Enumerable<ConstVersion, QueryCategory::Select, std::tuple<Fn>, TEnumerable>;
+    return Cinq<ConstVersion, SelectType>(std::make_tuple(std::move(fn)), std::move(root_));
   }
 
   template <class Fn>
   auto SelectMany(Fn fn) && {
-    using SelectManyType = Enumerable<ConstVersion, OperatorType::SelectMany, Fn, TEnumerable>;
-    return Cinq<ConstVersion, SelectManyType>(std::move(fn), std::move(root_));
+    using SelectManyType = Enumerable<ConstVersion, QueryCategory::SelectMany, std::tuple<Fn>, TEnumerable>;
+    return Cinq<ConstVersion, SelectManyType>(std::make_tuple(std::move(fn)), std::move(root_));
   }
 
   template <class Fn>
   auto Where(Fn fn) && {
-    using WhereType = Enumerable<ConstVersion, OperatorType::Where, Fn, TEnumerable>;
-    return Cinq<ConstVersion, WhereType>(std::move(fn), std::move(root_));
+    using WhereType = Enumerable<ConstVersion, QueryCategory::Where, std::tuple<Fn>, TEnumerable>;
+    return Cinq<ConstVersion, WhereType>(std::make_tuple(std::move(fn)), std::move(root_));
   }
 
   template <class Inner, class OuterKeySelector, class InnerKeySelector, class ResultSelector>
   auto Join(Inner &&inner, OuterKeySelector outer_key_selector, InnerKeySelector inner_key_selector, ResultSelector result_selector) && {
-    using OuterSelectType = Enumerable<ConstVersion, OperatorType::Select, OuterKeySelector, TEnumerable>;
-    
-    auto inner_select = CinqImpl<ConstVersion>(std::forward<Inner>(inner)).Select(std::move(inner_key_selector));
+    auto self = std::move(*this);
 
-    using JoinType = Enumerable<ConstVersion, OperatorType::Join, ResultSelector, OuterSelectType, decltype(inner_select)>;
+    using JoinType = Enumerable<ConstVersion, QueryCategory::Join,
+      std::tuple<OuterKeySelector, InnerKeySelector, ResultSelector>,
+      decltype(self),
+      std::remove_reference_t<
+        decltype(
+          CinqImpl<ConstVersion>(
+            std::forward<Inner>(inner)
+          )
+        )>
+    >;
+
     return Cinq<ConstVersion, JoinType>(
-        std::move(result_selector),
-        OuterSelectType(std::move(outer_key_selector), std::move(root_)),
-        std::move(inner_select)
+        std::make_tuple(std::move(outer_key_selector), std::move(inner_key_selector), std::move(result_selector)),
+        GetEnumerable(std::move(self)),
+        GetEnumerable(CinqImpl<ConstVersion>(std::forward<Inner>(inner)))
       );
   }
 
@@ -114,13 +122,13 @@ public:
   auto Intersect(Source &&source, Rest&&... rest) && {
     auto self = std::move(*this).Distinct();
 
-    using IntersectType = Enumerable<ConstVersion, OperatorType::Intersect, bool,
+    using IntersectType = Enumerable<ConstVersion, QueryCategory::Intersect, std::tuple<int>,
       decltype(self),
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct())>,
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())>...>;
 
     return Cinq<ConstVersion, IntersectType>(
-        false,
+        NoFunctionTag{},
         GetEnumerable(std::move(self)),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...
@@ -131,13 +139,13 @@ public:
   auto Union(Source &&source, Rest&&... rest) && {
     auto self = std::move(*this).Distinct();
 
-    using UnionType = Enumerable<ConstVersion, OperatorType::Union, bool,
+    using UnionType = Enumerable<ConstVersion, QueryCategory::Union, std::tuple<int>,
       decltype(self),
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct())>,
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())>...>;
 
     return Cinq<ConstVersion, UnionType>(
-        false,
+        NoFunctionTag{},
         GetEnumerable(std::move(self)),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Source>(source)).Distinct()),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Rest>(rest)).Distinct())...
@@ -146,11 +154,11 @@ public:
 
   template <class Source, class... Rest>
   auto Concat(Source &&sources, Rest&&... rest) && {
-    using ConcatType = Enumerable<ConstVersion, OperatorType::Concat, bool, TEnumerable, 
+    using ConcatType = Enumerable<ConstVersion, QueryCategory::Concat, std::tuple<int>, TEnumerable, 
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Source>(sources)))>,
       std::remove_reference_t<decltype(CinqImpl<ConstVersion>(std::forward<Rest>(rest)))>...>;
     return Cinq<ConstVersion, ConcatType>(
-        false,
+        NoFunctionTag{},
         std::move(root_),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Source>(sources))),
         GetEnumerable(CinqImpl<ConstVersion>(std::forward<Rest>(rest)))...
@@ -158,9 +166,21 @@ public:
   }
 
   auto Distinct() && {
-    // TODO : use ReferenceWrapper when possible
-    using DistinctType = Enumerable<ConstVersion, OperatorType::Distinct, bool, TEnumerable>;
-    return Cinq<ConstVersion, DistinctType>(true, std::move(root_));
+    using DistinctType = Enumerable<ConstVersion, QueryCategory::Distinct, std::tuple<int>, TEnumerable>;
+    return Cinq<ConstVersion, DistinctType>(NoFunctionTag{}, std::move(root_));
+  }
+
+  // TODO : Add test case
+  template <class Pred>
+  bool All(Pred &&p) const {
+    bool result = true;
+    for (auto &&e : *this) {
+      static_assert(concept::PredicateCheck<Pred &&, decltype(e)>(), "Bad predicate");
+      if (!(result = result && std::invoke(std::forward<Pred>(p), std::forward<decltype(e)>(e))))
+        break;
+    }
+     
+    return result;
   }
  
   auto ToVector() {

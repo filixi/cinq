@@ -8,3 +8,122 @@ The first relase will require C++17 to compile, and will only support a subset o
 
 Warning:
 Depend on the settings, building the test in non parallel mode requires up to 6GiB memory and 10GiB disk space.
+
+Query implementation status:
+Fully implemented:
+Distinct()
+Intersect(Enumerable<TSource>, ...)
+Join(Enumerable<TOuter>, [](TInner) -> )
+Select([](TSource) -> TResult)
+SelectMany([](TSource) -> TEnumerable)
+ToVector()
+Where([](TSource) -> bool)
+
+Need test case:
+All([](TSource) -> bool)
+ToSet()
+
+To implement:
+Aggregate([](TSource, TSource) -> TSource)
+Aggregate(TAccumulate, [](TAccumulate, TSource) -> TAccumulate)
+Aggregate(TAccumulate, [](TAccumulate, TSource) -> TAccumulate, [](TAccumulate) -> TResult)
+Any() / Empty
+Any([](TSource) -> bool)
+Append(TSource)
+Average([](TSource) -> TResult)
+StaticCast<TResult>
+DynamicCast<TResult>
+ConstCast<TResult>
+ReinterpretCast<TResult>
+Contains(TSource)
+Count() / Size / LongCount
+Count([](TSource) -> bool) / CountIf
+DefaultIfEmpty()
+DefaultIfEmpty(TSource)
+Distinct([](TSource, TSource) -> bool)
+ElementAt(size_t) / At
+ElementAtOrDefault(size_t)
+Except(Enumerable<TSource>)
+Except(Enumerable<TSource>, [](TSource, TSource) -> bool)
+First() / Front
+First([](TSource) -> bool)
+FirstOrDefault()
+FirstOrDefault([](TSource) -> bool)
+GroupBy([](TSource) -> TKey)
+GroupBy([](TSource) -> TKey, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult)
+GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
+GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult)
+GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult, [](TKey, TKey) -> bool)
+Intersect(Enumerable<TSource>, [](TSource, TSource) -> bool)
+Intersect(Enumerable<TSource>)
+Join(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, TInner) -> TResult)
+Join(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, TInner) -> TResult, [](TKey, TKey) -> bool)
+Last() / Back
+Last([](TSource) -> bool)
+LastOrDefault()
+LastOrDefault([](TSource) -> bool)
+Max()
+Max([](TSource) -> TResult)
+Min()
+Min([](TSource) -> TResult)
+OfType<TResult>()
+OrderBy([](TSource) -> TKey)
+OrderBy([](TSource) -> TKey, [](TKey, TKey) -> bool)
+OrderByDescending([](TSource) -> TKey)
+OrderByDescending([](TSource) -> TKey, [](TKey, TKey) -> bool)
+Prepend(TSource)
+Range(T, T)
+Repeat(TResult, size_t)
+Reverse()
+Select([](TSource, size_t) -> TResult)
+SelectMany([](TSource) -> TEnumerable, [](TSource, TElement) -> TResult)
+SelectMany([](TSource, size_t) -> TEnumerable, [](TSource, TElement) -> TResult)
+SelectMany([](TSource, size_t) -> TEnumerable)
+SequenceEqual(Enumerable<TSource>)
+SequenceEqual(Enumerable<TSource>, [](TSource, TSource) -> bool)
+Single([](TSource) -> bool)
+Single()
+SingleOrDefault()
+SingleOrDefault([](TSource) -> bool)
+Skip(size_t)
+SkipLast(size_t)
+SkipWhile([](TSource) -> bool)
+SkipWhile([](TSource, size_t) -> bool)
+Sum()
+Sum([](TSource) -> TResult)
+Take(size_t)
+TakeLast(size_t)
+TakeWhile([](TSource) -> bool)
+TakeWhile([](TSource, size_t) -> bool)
+Union(Enumerable<TSource>)
+Union(Enumerable<TSource>, [](TSource, TSource) -> bool)
+Where([](TSource, size_t) -> bool)
+
+ToList
+ToForwardList
+ToDequeue
+ToStack
+ToQueue
+ToPriorityQueue
+ToMap
+ToUnorderedSap
+ToSet
+ToUnorderedSet
+
+
+Pending:
+ThenBy([](TSource) -> Tkey)
+ThenBy([](TSource) -> Tkey, [](TKey, TKey) -> bool)
+ThenByDescending([](TSource) -> Tkey)
+ThenByDescending([](TSource) -> Tkey, [](TKey, TKey) -> bool)
+ToArray
+ToDictionary
+ToHashSet
+ToList
+ToLookup
+

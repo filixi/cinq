@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 
+#include "cinq-test-utility.h"
 #include "cinq.h"
 using cinq::Cinq;
 
@@ -189,12 +190,12 @@ struct FunctionObject {
 };
 
 struct ValueCategoryTestUnit {
-  template <class QueryType, class YieldQueryType, class... Args>
-  YieldQueryType AppendQuery(QueryType &&query_base, YieldQueryType (QueryType::*query)(Args...) &&, std::vector<ValueCategoryInfo> &info,
+  template <class QueryCategory, class YieldQueryType, class... Args>
+  YieldQueryType AppendQuery(QueryCategory &&query_base, YieldQueryType (QueryCategory::*query)(Args...) &&, std::vector<ValueCategoryInfo> &info,
     const std::string &query_constness, const std::string &source_category) {
     std::vector<ValueCategoryInfo> local_info;
     auto yield_query = (std::move(query_base).*query)(Args{local_info}...);
-    yield_query.ToVector();
+    ToVector(yield_query);
 
     using SourceYieldType = decltype(*std::begin(query_base));
     for (auto &i : local_info) {
@@ -236,13 +237,13 @@ struct ValueCategoryTestUnit {
     int i = 0;
     for (; first != last; ++first) {
       auto flag = ValueCategoryInfo::IsConformant(*first);
-      assert(flag);
+      cinq::utility::CinqAssert(flag);
       ++i;
     }
   }
 
-  template <class TestInfo, class QueryType>
-  void SingleTest(const TestInfo &test_info, QueryType &&query, std::string query_name) {
+  template <class TestInfo, class QueryCategory>
+  void SingleTest(const TestInfo &test_info, QueryCategory &&query, std::string query_name) {
     std::vector<ValueCategoryInfo> info;
 
     AppendQuery(std::move(query), std::get<0>(test_info), info, std::get<1>(test_info), std::get<2>(test_info));
@@ -250,8 +251,8 @@ struct ValueCategoryTestUnit {
     AssertAllInfo(info.begin(), info.end());
   }
 
-  template <class Func, class QueryType>
-  void SingleTest(Func func, const std::string &query_constness, const std::string &source_category, QueryType &&query, std::string query_name) {
+  template <class Func, class QueryCategory>
+  void SingleTest(Func func, const std::string &query_constness, const std::string &source_category, QueryCategory &&query, std::string query_name) {
     std::vector<ValueCategoryInfo> info;
 
     AppendQuery(std::move(query), func, info, query_constness, source_category);
@@ -262,13 +263,13 @@ struct ValueCategoryTestUnit {
   template <class Container>
   void TestSelectMany(Container container) {
     {
-      using QueryType = decltype(Cinq(container));
-      auto MFP_select_many_1 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>;
-      auto MFP_select_many_2 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>;
-      auto MFP_select_many_3 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>;
-      auto MFP_select_many_4 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>;
-      auto MFP_select_many_5 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>;
-      auto MFP_select_many_6 = &QueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>;
+      using QueryCategory = decltype(Cinq(container));
+      auto MFP_select_many_1 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>;
+      auto MFP_select_many_2 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>;
+      auto MFP_select_many_3 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>;
+      auto MFP_select_many_4 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>;
+      auto MFP_select_many_5 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>;
+      auto MFP_select_many_6 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>;
 
       SingleTest(std::make_tuple(MFP_select_many_1, "NonConst", "Iterator"), Cinq(container), "SelectMany");
       SingleTest(std::make_tuple(MFP_select_many_2, "NonConst", "Iterator"), Cinq(container), "SelectMany");
@@ -299,13 +300,13 @@ struct ValueCategoryTestUnit {
   template <class Container>
   void TestSelect(Container container) {
     {
-      using QueryType = decltype(Cinq(container));
-      auto MFP_select1 = &QueryType::template Select<FunctionObject<VCRetType, true>>;
-      auto MFP_select2 = &QueryType::template Select<FunctionObject<const VCRetType, true>>;
-      auto MFP_select3 = &QueryType::template Select<FunctionObject<VCRetType &, true>>;
-      auto MFP_select4 = &QueryType::template Select<FunctionObject<const VCRetType &, true>>;
-      auto MFP_select5 = &QueryType::template Select<FunctionObject<VCRetType &&, true>>;
-      auto MFP_select6 = &QueryType::template Select<FunctionObject<const VCRetType &&, true>>;
+      using QueryCategory = decltype(Cinq(container));
+      auto MFP_select1 = &QueryCategory::template Select<FunctionObject<VCRetType, true>>;
+      auto MFP_select2 = &QueryCategory::template Select<FunctionObject<const VCRetType, true>>;
+      auto MFP_select3 = &QueryCategory::template Select<FunctionObject<VCRetType &, true>>;
+      auto MFP_select4 = &QueryCategory::template Select<FunctionObject<const VCRetType &, true>>;
+      auto MFP_select5 = &QueryCategory::template Select<FunctionObject<VCRetType &&, true>>;
+      auto MFP_select6 = &QueryCategory::template Select<FunctionObject<const VCRetType &&, true>>;
 
       SingleTest(std::make_tuple(MFP_select1, "NonConst", "FunctionObject"), Cinq(container), "Select");
       SingleTest(std::make_tuple(MFP_select2, "NonConst", "FunctionObject"), Cinq(container), "Select");
@@ -358,12 +359,12 @@ struct ValueCategoryTestUnit {
 
       [&ret3, &info](auto &&x, auto &&y) -> Selector3Ret {
           info.push_back(ValueCategoryInfo::CreateExprInfo<decltype(x)>("FunctionParameter"));
-          ValueCategoryInfo::FillSourceInfo<Selector1Ret>(info.back(), "FunctionObject");
+          ValueCategoryInfo::FillSourceInfo<ContainerYieldType>(info.back(), "Iterator");
           info.push_back(ValueCategoryInfo::CreateExprInfo<decltype(y)>("FunctionParameter"));
-          ValueCategoryInfo::FillSourceInfo<Selector2Ret>(info.back(), "FunctionObject");
+          ValueCategoryInfo::FillSourceInfo<ContainerYieldType>(info.back(), "Iterator");
           return static_cast<Selector3Ret>(ret3);
         });
-    query.ToVector();
+    ToVector(query);
 
     info.push_back(ValueCategoryInfo::CreateExprInfo<decltype(*std::begin(query))>("IteratorRet"));
     info.back().IteartorConstness = "NonConst";
@@ -434,17 +435,17 @@ struct ValueCategoryTestUnit {
     TestJoin(container);
 
     {
-      using QueryType = std::decay_t<decltype(Cinq(container))>;
-      auto MFP_where = &QueryType::template Where<FunctionObject<bool, false>>;
-      auto MFP_intersect1 = &QueryType::template Intersect<Container>;
-      auto MFP_intersect2 = &QueryType::template Intersect<Container, Container>;
-      auto MFP_union1 = &QueryType::template Union<Container>;
-      auto MFP_union2 = &QueryType::template Union<Container, Container>;
-      auto MFP_concat1 = &QueryType::template Concat<Container>;
-      auto MFP_concat2 = &QueryType::template Concat<Container, Container>;
+      using QueryCategory = std::decay_t<decltype(Cinq(container))>;
+      auto MFP_where = &QueryCategory::template Where<FunctionObject<bool, false>>;
+      auto MFP_intersect1 = &QueryCategory::template Intersect<Container>;
+      auto MFP_intersect2 = &QueryCategory::template Intersect<Container, Container>;
+      auto MFP_union1 = &QueryCategory::template Union<Container>;
+      auto MFP_union2 = &QueryCategory::template Union<Container, Container>;
+      auto MFP_concat1 = &QueryCategory::template Concat<Container>;
+      auto MFP_concat2 = &QueryCategory::template Concat<Container, Container>;
 
       SingleTest(std::make_tuple(MFP_where, "NonConst", "Iterator"), Cinq(container), "Where");
-      SingleTest(std::make_tuple(&QueryType::Distinct, "NonConst", "Internal"), Cinq(container), "Distinct");
+      SingleTest(std::make_tuple(&QueryCategory::Distinct, "NonConst", "Internal"), Cinq(container), "Distinct");
       SingleTest(std::make_tuple(MFP_intersect1, "NonConst", "Internal"), Cinq(container), "Intersect");
       SingleTest(std::make_tuple(MFP_intersect2, "NonConst", "Internal"), Cinq(container), "Intersect");
       SingleTest(std::make_tuple(MFP_union1, "NonConst", "Internal"), Cinq(container), "Union");
@@ -489,9 +490,6 @@ void RuntimeValueCategoryTest() {
 }
 
 void CompileTimeValueCategoryTest() {
-  // run-time test
-  cinq_test::RuntimeValueCategoryTest();
-
   // compile-time test
 #define CONST_LVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_const_lvalue_reference_v<T>, "const lvalue ref assert failed.")
 #define NON_CONST_LVALUE_REFERENCE_ASSERT(T) static_assert(cinq::utility::is_non_const_lvalue_reference_v<T>, "non-const lvalue ref assert failed.")
@@ -538,7 +536,7 @@ void CompileTimeValueCategoryTest() {
         NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::forward<decltype(x)>(x);
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -548,7 +546,7 @@ void CompileTimeValueCategoryTest() {
         CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::forward<decltype(x)>(x);
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -581,7 +579,7 @@ void CompileTimeValueCategoryTest() {
         NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::vector<int>();
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -591,7 +589,7 @@ void CompileTimeValueCategoryTest() {
         CONST_LVALUE_REFERENCE_ASSERT(decltype(x));
         return std::vector<int>();
       });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -670,7 +668,7 @@ void CompileTimeValueCategoryTest() {
           NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return s;
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_LVALUE(query)
     }
@@ -687,7 +685,7 @@ void CompileTimeValueCategoryTest() {
           CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return std::tie(first, second);
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
@@ -704,7 +702,7 @@ void CompileTimeValueCategoryTest() {
           NON_CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return std::tie(first, second);
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
@@ -721,7 +719,7 @@ void CompileTimeValueCategoryTest() {
           CONST_LVALUE_REFERENCE_ASSERT(decltype(second));
           return std::tie(first, second);
         });
-      query.ToVector();
+      ToVector(query);
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }

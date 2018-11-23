@@ -7,8 +7,8 @@
 
 #include "detail/concept.h"
 #include "enumerable-source.h"
-#include "operator-category.h"
-#include "operator-specialized-iterator.h"
+#include "query-category.h"
+#include "query-iterator.h"
 
 namespace cinq::detail {
 template <bool ConstVersion, class TEnumerable>
@@ -21,13 +21,13 @@ struct is_cinq<Cinq<ConstVersion, TE>> : std::true_type {};
 template <class T>
 inline constexpr bool is_cinq_v = is_cinq<T>::value;
 
-template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>
+template <bool ConstVersion, class QueryTag, class TTupleFns, class... TSources>
 class Enumerable;
 
 template <class>
 struct is_enumerable : std::false_type {};
-template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>
-struct is_enumerable<Enumerable<ConstVersion, Operator, TFn, TSources...>> : std::true_type {};
+template <bool ConstVersion, class QueryTag, class TTupleFns, class... TSources>
+struct is_enumerable<Enumerable<ConstVersion, QueryTag, TTupleFns, TSources...>> : std::true_type {};
 template <class T>
 inline constexpr bool is_enumerable_v = is_enumerable<T>::value;
 
@@ -94,26 +94,50 @@ public:
   constexpr size_t SourcesSize() const { return 0; }
 };
 
-template <OperatorType Operator, class TFn, class... TSources>
-class BasicEnumerable : protected MultipleSources<TSources...> {
+struct NoFunctionTag {};
+
+template <class TupleFns>
+struct FunctionHolder {
+  template <class TupFns>
+  FunctionHolder(TupFns &&fns) : fns_(std::forward<TupFns>(fns)) {}
+
+  auto &FirstFn() const {
+    return std::get<0>(fns_);
+  }
+
+  template <size_t index>
+  auto &GetFn() const {
+    return std::get<index>(fns_);
+  }
+
+  mutable TupleFns fns_;
+};
+
+template <>
+struct FunctionHolder<std::tuple<int>> {
+  FunctionHolder(NoFunctionTag) {}
+};
+
+template <class QueryTag, class TTupleFns, class... TSources>
+class BasicEnumerable : protected MultipleSources<TSources...>, protected FunctionHolder<TTupleFns> {
 protected:
-  friend class OperatorSpecializedIterator<true, true, BasicEnumerable>;
-  friend class OperatorSpecializedIterator<true, false, BasicEnumerable>;
-  friend class OperatorSpecializedIterator<false, true, BasicEnumerable>;
-  friend class OperatorSpecializedIterator<false, false, BasicEnumerable>;
-  friend class MultiVisitorSetIterator<IteratorTupleVisitor, true, Operator, TFn, TSources...>;
-  friend class MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, true, Operator, TFn, TSources...>;
-  friend class MultiVisitorSetIterator<IteratorTupleVisitor, false, Operator, TFn, TSources...>;
-  friend class MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, false, Operator, TFn, TSources...>;
+  friend class QueryIterator<true, true, BasicEnumerable>;
+  friend class QueryIterator<true, false, BasicEnumerable>;
+  friend class QueryIterator<false, true, BasicEnumerable>;
+  friend class QueryIterator<false, false, BasicEnumerable>;
+  friend class MultiVisitorSetIterator<IteratorTupleVisitor, true, QueryTag, TTupleFns, TSources...>;
+  friend class MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, true, QueryTag, TTupleFns, TSources...>;
+  friend class MultiVisitorSetIterator<IteratorTupleVisitor, false, QueryTag, TTupleFns, TSources...>;
+  friend class MultiVisitorSetIterator<RoundRobinIteratorTupleVisitor, false, QueryTag, TTupleFns, TSources...>;
 
 public:
-  template <class Fn>
-  BasicEnumerable(Fn &&fn, TSources&&... sources)
-    : MultipleSources<TSources...>(std::move(sources)...), fn_(std::forward<Fn>(fn)) {}
+  template <class TupleFns>
+  BasicEnumerable(TupleFns &&fns, TSources&&... sources)
+    : MultipleSources<TSources...>(std::move(sources)...), FunctionHolder<TTupleFns>(std::forward<TupleFns>(fns)) {}
 
   template <bool ArgConstness, bool RetConstness>
-  class Iterator : public OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Operator, TFn, TSources...>> {
-    using base = OperatorSpecializedIterator<ArgConstness, RetConstness, BasicEnumerable<Operator, TFn, TSources...>>;
+  class Iterator : public QueryIterator<ArgConstness, RetConstness, BasicEnumerable<QueryTag, TTupleFns, TSources...>> {
+    using base = QueryIterator<ArgConstness, RetConstness, BasicEnumerable<QueryTag, TTupleFns, TSources...>>;
   public:
     Iterator() {}
 
@@ -135,18 +159,15 @@ public:
     using pointer = std::add_pointer_t<typename base::value_type>;
     using iterator_category = std::input_iterator_tag;
   };
-
-private:
-  mutable TFn fn_;
 };
 
-template <bool ConstVersion, OperatorType Operator, class TFn, class... TSources>
-class Enumerable : private BasicEnumerable<Operator, TFn, TSources...> {
-  using base = BasicEnumerable<Operator, TFn, TSources...>;
+template <bool ConstVersion, class QueryTag, class TTupleFns, class... TSources>
+class Enumerable : private BasicEnumerable<QueryTag, TTupleFns, TSources...> {
+  using base = BasicEnumerable<QueryTag, TTupleFns, TSources...>;
 public:
-  template <class Fn>
-  Enumerable(Fn &&fn, TSources&&... sources)
-    : base(std::forward<Fn>(fn), std::forward<TSources>(sources)...) {}
+  template <class Fns>
+  Enumerable(Fns &&fns, TSources&&... sources)
+    : base(std::forward<Fns>(fns), std::forward<TSources>(sources)...) {}
 
   using ResultIterator = typename base::template Iterator<ConstVersion, ConstVersion>;
   using ConstResultIterator = typename base::template Iterator<ConstVersion, true>;

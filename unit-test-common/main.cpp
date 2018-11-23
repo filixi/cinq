@@ -101,6 +101,7 @@ int main() try {
   threads.emplace_back(cinq_test::TestCinqInitialization);
   threads.emplace_back(cinq_test::CompileTimeValueCategoryTest);
   threads.emplace_back(cinq_test::RuntimeValueCategoryTest);
+  threads.emplace_back(cinq_test::IteratorDefaultConstructTest);
 
   threads.emplace_back(cinq_test::LifeTimeVtrTest);
   threads.emplace_back(cinq_test::LifeTimeRefVtrTest);

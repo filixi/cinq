@@ -22,6 +22,9 @@
     <Filter Include="cinq\detail">
       <UniqueIdentifier>{5877dc2a-47c3-4c71-8b19-a4baf6afe551}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cinq\cinq\querys-iterator">
+      <UniqueIdentifier>{cae13dc3-acac-4eac-a785-286074b19875}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\cinq.h">
@@ -37,12 +40,6 @@
       <Filter>cinq\cinq</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\cinq\enumerable-source.h">
-      <Filter>cinq\cinq</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\cinq\operator-category.h">
-      <Filter>cinq\cinq</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\cinq\operator-specialized-iterator.h">
       <Filter>cinq\cinq</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\detail\concept.h">
@@ -62,6 +59,42 @@
     </ClInclude>
     <ClInclude Include="..\..\unit-test-common\query-generator.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\query-category.h">
+      <Filter>cinq\cinq</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\query-iterator-fwd.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\select-many.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\select.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\join.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\where.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\union.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\intersect.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\concat.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\distinct.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\empty-query-iterator.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\query-iterator.h">
+      <Filter>cinq\cinq</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -90,6 +123,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\unit-test-common\life-time-iterator-storage-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\long-query-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\iterator-default-construct-test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
