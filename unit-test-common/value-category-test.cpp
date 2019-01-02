@@ -124,9 +124,9 @@ struct ValueCategoryInfo {
 };
 
 template <class Ret>
-struct FakeConatiner {
-  FakeConatiner() = default;
-  explicit FakeConatiner(std::vector<ValueCategoryInfo> &) {}
+struct FakeContainer {
+  FakeContainer() = default;
+  explicit FakeContainer(std::vector<ValueCategoryInfo> &) {}
 
   struct Iterator {
     bool operator==(const Iterator &rhs) const {return i == rhs.i;}
@@ -264,12 +264,12 @@ struct ValueCategoryTestUnit {
   void TestSelectMany(Container container) {
     {
       using QueryCategory = decltype(Cinq(container));
-      auto MFP_select_many_1 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>;
-      auto MFP_select_many_2 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>;
-      auto MFP_select_many_3 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>;
-      auto MFP_select_many_4 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>;
-      auto MFP_select_many_5 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>;
-      auto MFP_select_many_6 = &QueryCategory::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>;
+      auto MFP_select_many_1 = &QueryCategory::template SelectMany<FunctionObject<FakeContainer<VCRetType>, false, true>>;
+      auto MFP_select_many_2 = &QueryCategory::template SelectMany<FunctionObject<FakeContainer<const VCRetType>, false, true>>;
+      auto MFP_select_many_3 = &QueryCategory::template SelectMany<FunctionObject<FakeContainer<VCRetType &>, false, true>>;
+      auto MFP_select_many_4 = &QueryCategory::template SelectMany<FunctionObject<FakeContainer<const VCRetType &>, false, true>>;
+      auto MFP_select_many_5 = &QueryCategory::template SelectMany<FunctionObject<FakeContainer<VCRetType &&>, false, true>>;
+      auto MFP_select_many_6 = &QueryCategory::template SelectMany<FunctionObject<FakeContainer<const VCRetType &&>, false, true>>;
 
       SingleTest(std::make_tuple(MFP_select_many_1, "NonConst", "Iterator"), Cinq(container), "SelectMany");
       SingleTest(std::make_tuple(MFP_select_many_2, "NonConst", "Iterator"), Cinq(container), "SelectMany");
@@ -281,12 +281,12 @@ struct ValueCategoryTestUnit {
 
     {
       using ConstQueryType = decltype(Cinq(container).Const());
-      auto MFP_select_many_1 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType>, false, true>>;
-      auto MFP_select_many_2 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType>, false, true>>;
-      auto MFP_select_many_3 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &>, false, true>>;
-      auto MFP_select_many_4 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &>, false, true>>;
-      auto MFP_select_many_5 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<VCRetType &&>, false, true>>;
-      auto MFP_select_many_6 = &ConstQueryType::template SelectMany<FunctionObject<FakeConatiner<const VCRetType &&>, false, true>>;
+      auto MFP_select_many_1 = &ConstQueryType::template SelectMany<FunctionObject<FakeContainer<VCRetType>, false, true>>;
+      auto MFP_select_many_2 = &ConstQueryType::template SelectMany<FunctionObject<FakeContainer<const VCRetType>, false, true>>;
+      auto MFP_select_many_3 = &ConstQueryType::template SelectMany<FunctionObject<FakeContainer<VCRetType &>, false, true>>;
+      auto MFP_select_many_4 = &ConstQueryType::template SelectMany<FunctionObject<FakeContainer<const VCRetType &>, false, true>>;
+      auto MFP_select_many_5 = &ConstQueryType::template SelectMany<FunctionObject<FakeContainer<VCRetType &&>, false, true>>;
+      auto MFP_select_many_6 = &ConstQueryType::template SelectMany<FunctionObject<FakeContainer<const VCRetType &&>, false, true>>;
 
       SingleTest(std::make_tuple(MFP_select_many_1, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
       SingleTest(std::make_tuple(MFP_select_many_2, "Const", "Iterator"), Cinq(container).Const(), "SelectMany");
@@ -476,12 +476,12 @@ struct ValueCategoryTestUnit {
   }
 
   void Test() {
-    TestBatch(FakeConatiner<VCRetType>());
-    TestBatch(FakeConatiner<const VCRetType>());
-    TestBatch(FakeConatiner<VCRetType &>());
-    TestBatch(FakeConatiner<const VCRetType &>());
-    TestBatch(FakeConatiner<VCRetType &&>());
-    TestBatch(FakeConatiner<const VCRetType &&>());
+    TestBatch(FakeContainer<VCRetType>());
+    TestBatch(FakeContainer<const VCRetType>());
+    TestBatch(FakeContainer<VCRetType &>());
+    TestBatch(FakeContainer<const VCRetType &>());
+    TestBatch(FakeContainer<VCRetType &&>());
+    TestBatch(FakeContainer<const VCRetType &&>());
   }
 };
 
@@ -723,6 +723,57 @@ void CompileTimeValueCategoryTest() {
 
       ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
     }
+  }
+
+  // DefaultIfEmpty
+  {
+    auto query = Cinq(vtr).Const().DefaultIfEmpty();
+    ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_LVALUE(query)
+  }
+
+  {
+    auto query = Cinq(vtr).DefaultIfEmpty();
+    ASSERT_QUERY_ITERATOR_YIELD_CONST_LVALUE(query)
+  }
+
+  {
+    auto query = Cinq(vtr).Const().DefaultIfEmpty();
+    ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_LVALUE(query)
+  }
+
+  {
+    auto query = Cinq(vtr).DefaultIfEmpty();
+    ASSERT_QUERY_ITERATOR_YIELD_CONST_LVALUE(query)
+  }
+
+  {
+    auto query = Cinq(FakeContainer<VCRetType>()).Const().DefaultIfEmpty();
+    ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
+  }
+
+  {
+    auto query = Cinq(FakeContainer<VCRetType>()).DefaultIfEmpty();
+    ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
+  }
+
+  {
+    auto query = Cinq(FakeContainer<int &>()).DefaultIfEmpty(short(3));
+    ASSERT_QUERY_ITERATOR_YIELD_CONST_LVALUE(query)
+  }
+
+  {
+    auto query = Cinq(FakeContainer<int>()).DefaultIfEmpty(short(3));
+    ASSERT_QUERY_ITERATOR_YIELD_PRVALUE(query)
+  }
+
+  {
+    auto query = Cinq(FakeContainer<int &>()).Const().DefaultIfEmpty(short(3));
+    ASSERT_CONST_QUERY_ITERATOR_YIELD_CONST_LVALUE(query)
+  }
+
+  {
+    auto query = Cinq(FakeContainer<int>()).Const().DefaultIfEmpty(short(3));
+    ASSERT_CONST_QUERY_ITERATOR_YIELD_PRVALUE(query)
   }
 }
 

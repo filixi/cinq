@@ -25,6 +25,9 @@
     <Filter Include="cinq\cinq\querys-iterator">
       <UniqueIdentifier>{cae13dc3-acac-4eac-a785-286074b19875}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\query-functionality-test">
+      <UniqueIdentifier>{a5a8c343-d0ea-4709-ab6c-fd7ad0bce88c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\cinq.h">
@@ -96,6 +99,12 @@
     <ClInclude Include="..\..\include\cinq\query-iterator.h">
       <Filter>cinq\cinq</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\default-if-empty.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\cinq\querys-iterator\except.h">
+      <Filter>cinq\cinq\querys-iterator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\unit-test-common\guarantee-test.cpp">
@@ -130,6 +139,57 @@
     </ClCompile>
     <ClCompile Include="..\..\unit-test-common\iterator-default-construct-test.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\aggregate-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test - Copy (14).cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test - Copy (15).cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test - Copy.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\empty-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\any-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\average-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\all-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\append-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\contain-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\count-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\default-if-empty-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\group-by-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\last-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\max-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\order-by-test.cpp">
+      <Filter>Source Files\query-functionality-test</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

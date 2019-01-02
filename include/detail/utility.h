@@ -53,7 +53,8 @@ inline constexpr bool is_hashable_v = is_hashable<T>::value;
 enum class SourceType {
   InternalStorage,
   FunctionObject,
-  Iterator
+  Iterator,
+  PartialInternalStorage
 };
 
 template <bool ConstVersion, class SourceYieldType, SourceType source_type>
@@ -62,6 +63,13 @@ struct transform_to_result_type;
 template <bool ConstVersion, class SourceYieldType>
 struct transform_to_result_type<ConstVersion, SourceYieldType, SourceType::InternalStorage> {
   using type = std::add_const_t<std::remove_reference_t<SourceYieldType>> &;
+};
+
+template <bool ConstVersion, class SourceYieldType>
+struct transform_to_result_type<ConstVersion, SourceYieldType, SourceType::PartialInternalStorage> {
+  using type = std::conditional_t<std::is_reference_v<SourceYieldType>,
+    std::add_const_t<std::remove_reference_t<SourceYieldType>> &,
+    SourceYieldType>;
 };
 
 template <bool ConstVersion, class SourceYieldType>
@@ -196,6 +204,35 @@ inline void CinqAssert(bool value) {
   if (!value)
     throw std::runtime_error("Cinq assert failed.");
 }
+
+template <class T>
+decltype(auto) IdentityOf(decltype(std::declval<T>()) &x) {
+  if constexpr (std::is_reference_v<T>)
+    return &x;
+  else
+    return std::forward<T>(x);
+}
+
+template <class Key, class Value>
+struct KVWrapper {
+  KVWrapper(Key &&key, Value &&value)
+    : key_(IdentityOf<Key>(key)), value_(IdentityOf<Value>(value)) {}
+        
+  std::conditional_t<std::is_reference_v<Key>,
+    const std::decay_t<Key> *,
+    std::decay_t<Key>> key_;
+
+  std::conditional_t<std::is_reference_v<Value>,
+    const std::decay_t<Value> *,
+    std::decay_t<Value>> value_;
+
+  friend bool operator<(const KVWrapper &lhs, const KVWrapper &rhs) {
+    if constexpr (std::is_reference_v<Key>)
+      return *lhs.key_ < *rhs.key_;
+    else
+      return lhs.key_ < rhs.key_;
+  }
+};
 
 } // namespace cinq::utility
 

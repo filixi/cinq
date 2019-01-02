@@ -10,6 +10,8 @@ struct QueryCategory {
   struct Union {};
   struct Concat {};
   struct Distinct  {};
+  struct DefaultIfEmpty {};
+  struct Except {};
 };
 
 } // namespace cinq::detail

@@ -85,6 +85,10 @@ public:
     }
   }
 
+  auto &GetSource() {
+    return source_;
+  }
+
 private:
   TSource source_;
 };

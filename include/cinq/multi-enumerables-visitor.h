@@ -180,6 +180,10 @@ public:
       lhs.first_ == rhs.first_;
   }
 
+  bool IsLast() const {
+    return current_enumerable_ == sizeof...(TSources);
+  }
+
 private:
   std::variant<typename TSources::ResultIterator...> first_;
   std::variant<typename TSources::ResultIterator...> last_;

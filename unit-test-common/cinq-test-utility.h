@@ -34,6 +34,7 @@ void VisitChild(Node &&node, Visitor &&visitor, LeafVisitor &&leaf_visitor, std:
 }
 
 struct LifeTimeCheckInt {
+  LifeTimeCheckInt() noexcept : value_(0) {}
   LifeTimeCheckInt(int v) noexcept : value_(v) {}
 
   LifeTimeCheckInt(const LifeTimeCheckInt &v) noexcept : value_(v.value_) { cinq::utility::CinqAssert(v.is_valid_); }

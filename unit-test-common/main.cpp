@@ -49,7 +49,7 @@
 // Value category guarantees:
 // In non-const verion:
 //  For type of deferencing iterator
-//    - if the result is stored in cinq's internal storage (such as set operation and Sort, except SelectMany), const lvalue
+//    - if the result is stored in cinq's internal storage (such as set operation and Sort, except SelectMany), const lvalue, if not possible, then prvalue
 //    - if the result is from function object or iterator, no change
 //    Note: Constness of prvalue will be removed.
 //    Note: If the result is from multiple sources, if they all yield same reference to same cv type, this reference will be used,
@@ -122,6 +122,15 @@ int main() try {
   threads.emplace_back(cinq_test::UnionTest);
   threads.emplace_back(cinq_test::ConcatTest);
   threads.emplace_back(cinq_test::DistinctTest);
+  threads.emplace_back(cinq_test::TestCinqAggregate);
+  threads.emplace_back(cinq_test::TestCinqEmpty);
+  threads.emplace_back(cinq_test::TestCinqAny);
+  threads.emplace_back(cinq_test::TestCinqAverage);
+  threads.emplace_back(cinq_test::TestCinqAll);
+  threads.emplace_back(cinq_test::TestCinqAppend);
+  threads.emplace_back(cinq_test::TestCinqContain);
+  threads.emplace_back(cinq_test::TestCinqCount);
+  threads.emplace_back(cinq_test::TestCinqDefaultIfEmpty);
 
   for (auto &th : threads)
     th.join();

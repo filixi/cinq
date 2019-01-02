@@ -10,3 +10,5 @@
 #include "querys-iterator/select.h"
 #include "querys-iterator/union.h"
 #include "querys-iterator/where.h"
+#include "querys-iterator/default-if-empty.h"
+#include "querys-iterator/except.h"

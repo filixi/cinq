@@ -27,9 +27,11 @@
     <ClInclude Include="..\..\include\cinq\multi-enumerables-visitor.h" />
     <ClInclude Include="..\..\include\cinq\query-category.h" />
     <ClInclude Include="..\..\include\cinq\query-iterator.h" />
+    <ClInclude Include="..\..\include\cinq\querys-iterator\default-if-empty.h" />
     <ClInclude Include="..\..\include\cinq\querys-iterator\empty-query-iterator.h" />
     <ClInclude Include="..\..\include\cinq\querys-iterator\distinct.h" />
     <ClInclude Include="..\..\include\cinq\querys-iterator\concat.h" />
+    <ClInclude Include="..\..\include\cinq\querys-iterator\except.h" />
     <ClInclude Include="..\..\include\cinq\querys-iterator\intersect.h" />
     <ClInclude Include="..\..\include\cinq\querys-iterator\union.h" />
     <ClInclude Include="..\..\include\cinq\querys-iterator\where.h" />
@@ -53,6 +55,23 @@
     <ClCompile Include="..\..\unit-test-common\life-time-vtr-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\long-query-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\main.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\aggregate-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\group-by-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\last-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\max-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\order-by-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test - Copy (14).cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test - Copy (15).cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\empty-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\any-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\average-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\all-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\append-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\contain-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\count-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\default-if-empty-test.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test - Copy.cpp" />
+    <ClCompile Include="..\..\unit-test-common\query-functionality-test\unit-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\set-operation-test.cpp" />
     <ClCompile Include="..\..\unit-test-common\value-category-test.cpp" />
   </ItemGroup>

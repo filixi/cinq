@@ -11,6 +11,9 @@
 #include "query-iterator.h"
 
 namespace cinq::detail {
+template <bool ConstVersion, class QueryTag, class TTupleFns, class... TSources>
+class Enumerable;
+
 template <bool ConstVersion, class TEnumerable>
 class Cinq;
 
@@ -20,9 +23,6 @@ template <bool ConstVersion, class TE>
 struct is_cinq<Cinq<ConstVersion, TE>> : std::true_type {};
 template <class T>
 inline constexpr bool is_cinq_v = is_cinq<T>::value;
-
-template <bool ConstVersion, class QueryTag, class TTupleFns, class... TSources>
-class Enumerable;
 
 template <class>
 struct is_enumerable : std::false_type {};

@@ -42,6 +42,16 @@ void NoCopyGuaranteeTest();
 void SetOperationInternalContainerTest();
 void SetOperationAliasTest();
 
+void TestCinqAggregate();
+void TestCinqEmpty();
+void TestCinqAny();
+void TestCinqAverage();
+void TestCinqAll();
+void TestCinqAppend();
+void TestCinqContain();
+void TestCinqCount();
+void TestCinqDefaultIfEmpty();
+
 class MiniContainer {
 public:
   auto begin() { return std::begin(data); }

@@ -13,83 +13,57 @@ Query implementation status:
 Fully implemented:
 Distinct()
 Intersect(Enumerable<TSource>, ...)
-Join(Enumerable<TOuter>, [](TInner) -> )
+Join(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, TInner) -> TResult)
 Select([](TSource) -> TResult)
 SelectMany([](TSource) -> TEnumerable)
 ToVector()
 Where([](TSource) -> bool)
-
-Need test case:
-All([](TSource) -> bool)
-ToSet()
-
-To implement:
 Aggregate([](TSource, TSource) -> TSource)
 Aggregate(TAccumulate, [](TAccumulate, TSource) -> TAccumulate)
 Aggregate(TAccumulate, [](TAccumulate, TSource) -> TAccumulate, [](TAccumulate) -> TResult)
 Any() / Empty
 Any([](TSource) -> bool)
-Append(TSource)
+All([](TSource) -> bool)
+Average()
 Average([](TSource) -> TResult)
 StaticCast<TResult>
 DynamicCast<TResult>
 ConstCast<TResult>
 ReinterpretCast<TResult>
+Append(TSource)
 Contains(TSource)
 Count() / Size / LongCount
 Count([](TSource) -> bool) / CountIf
 DefaultIfEmpty()
 DefaultIfEmpty(TSource)
-Distinct([](TSource, TSource) -> bool)
+Intersect(Enumerable<TSource>)
+
+Need test case:
 ElementAt(size_t) / At
-ElementAtOrDefault(size_t)
 Except(Enumerable<TSource>)
-Except(Enumerable<TSource>, [](TSource, TSource) -> bool)
 First() / Front
 First([](TSource) -> bool)
-FirstOrDefault()
-FirstOrDefault([](TSource) -> bool)
+ToSet()
 GroupBy([](TSource) -> TKey)
-GroupBy([](TSource) -> TKey, [](TKey, TKey) -> bool)
 GroupBy([](TSource) -> TKey, [](TSource) -> TElement)
-GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, TKey) -> bool)
-GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult)
-GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
-GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult)
-GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
-GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult)
-GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult, [](TKey, TKey) -> bool)
-Intersect(Enumerable<TSource>, [](TSource, TSource) -> bool)
-Intersect(Enumerable<TSource>)
-Join(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, TInner) -> TResult)
-Join(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, TInner) -> TResult, [](TKey, TKey) -> bool)
 Last() / Back
 Last([](TSource) -> bool)
-LastOrDefault()
-LastOrDefault([](TSource) -> bool)
 Max()
 Max([](TSource) -> TResult)
 Min()
 Min([](TSource) -> TResult)
-OfType<TResult>()
+Order()
 OrderBy([](TSource) -> TKey)
 OrderBy([](TSource) -> TKey, [](TKey, TKey) -> bool)
-OrderByDescending([](TSource) -> TKey)
-OrderByDescending([](TSource) -> TKey, [](TKey, TKey) -> bool)
 Prepend(TSource)
-Range(T, T)
-Repeat(TResult, size_t)
 Reverse()
-Select([](TSource, size_t) -> TResult)
+
+To implement:
 SelectMany([](TSource) -> TEnumerable, [](TSource, TElement) -> TResult)
-SelectMany([](TSource, size_t) -> TEnumerable, [](TSource, TElement) -> TResult)
-SelectMany([](TSource, size_t) -> TEnumerable)
 SequenceEqual(Enumerable<TSource>)
 SequenceEqual(Enumerable<TSource>, [](TSource, TSource) -> bool)
 Single([](TSource) -> bool)
 Single()
-SingleOrDefault()
-SingleOrDefault([](TSource) -> bool)
 Skip(size_t)
 SkipLast(size_t)
 SkipWhile([](TSource) -> bool)
@@ -103,6 +77,9 @@ TakeWhile([](TSource, size_t) -> bool)
 Union(Enumerable<TSource>)
 Union(Enumerable<TSource>, [](TSource, TSource) -> bool)
 Where([](TSource, size_t) -> bool)
+Select([](TSource, size_t) -> TResult)
+SelectMany([](TSource, size_t) -> TEnumerable, [](TSource, TElement) -> TResult)
+SelectMany([](TSource, size_t) -> TEnumerable)
 
 ToList
 ToForwardList
@@ -126,4 +103,27 @@ ToDictionary
 ToHashSet
 ToList
 ToLookup
-
+Distinct([](TSource, TSource) -> bool)
+ElementAtOrDefault(size_t)
+Except(Enumerable<TSource>, [](TSource, TSource) -> bool)
+FirstOrDefault()
+FirstOrDefault([](TSource) -> bool)
+GroupBy([](TSource) -> TKey, [](TKey, TKey) -> bool)
+LastOrDefault()
+LastOrDefault([](TSource) -> bool)
+Intersect(Enumerable<TSource>, [](TSource, TSource) -> bool)
+Join(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, TInner) -> TResult, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult, [](TKey, TKey) -> bool)
+GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult, [](TKey, TKey) -> bool)
+SingleOrDefault()
+SingleOrDefault([](TSource) -> bool)
+GroupBy([](TSource) -> TKey, [](TKey, Enumerable) -> TResult)
+GroupBy([](TSource) -> TKey, [](TSource) -> TElement, [](TKey, Enumerable) -> TResult)
+GroupJoin(Enumerable<TInner>, [](TOuter) -> TKey, [](TInner) -> TKey, [](TOuter, Enumerable<TInner>) -> TResult)
+OfType<TResult>()
+OrderByDescending([](TSource) -> TKey)
+OrderByDescending([](TSource) -> TKey, [](TKey, TKey) -> bool)
+Range(T, T)
+Repeat(TResult, size_t)
